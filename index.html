@@ -219,6 +219,43 @@
     .login form { display: grid; gap: 10px; text-align: left; }
     .login .erro { color: var(--danger); font-size: 14px; min-height: 20px; }
     .login .link { color: var(--accent); margin-top: 18px; font-size: 15px; }
+
+    /* ---------- v1.1: mercado, orçamento, fotos, código de barras ---------- */
+    .btn-icone.ativo { background: var(--accent); color: #fff; }
+    .faixa { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 12px; background: var(--accent-soft); margin: 4px 0 8px; font-size: 14.5px; }
+    .faixa b { color: var(--accent-strong); }
+    .faixa .btn { padding: 7px 12px; font-size: 14px; background: var(--surface); flex: none; }
+    .orc { margin-top: 8px; }
+    .orc .barra { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+    .orc .barra span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+    .orc .barra.estourou span { background: var(--danger); }
+    .orc small { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+    .orc-hist { padding: 0 16px 12px; }
+    .orc-hist .orc { margin-top: 6px; }
+    .item .ver-foto { flex: none; margin-left: -6px; }
+    .item .foto { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; display: block; background: var(--surface-2); }
+    .item .lapis { width: 44px; align-self: stretch; display: none; place-items: center; color: var(--muted); flex: none; }
+    .item .lapis svg { width: 18px; height: 18px; }
+    body.modo-mercado .item { min-height: 66px; }
+    body.modo-mercado .item .nome { font-size: 20px; }
+    body.modo-mercado .item .det { font-size: 15px; }
+    body.modo-mercado .item .check { width: 60px; }
+    body.modo-mercado .item .check span { width: 32px; height: 32px; }
+    body.modo-mercado .item .lapis { display: grid; }
+    body.modo-mercado .item .valor { padding-right: 0; }
+    body.modo-mercado .grupo h3 { font-size: 14px; }
+    .foto-grande { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 12px; background: var(--surface-2); display: block; }
+    .foto-campo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .foto-campo img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; }
+    .foto-campo .btn { padding: 10px 14px; }
+    .leitor-tela { position: fixed; inset: 0; z-index: 70; background: var(--surface); padding: calc(var(--top) + 14px) 16px calc(var(--bottom) + 16px); overflow-y: auto; }
+    .leitor-tela h2 { font-size: 20px; margin: 4px 0 12px; }
+    .leitor-tela form { display: flex; gap: 8px; margin-top: 12px; }
+    .leitor { position: relative; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 3 / 4; max-height: 56vh; margin: 0 auto; }
+    .leitor video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .leitor .mira { position: absolute; left: 8%; right: 8%; top: 38%; height: 24%; border: 3px solid rgba(255,255,255,.9); border-radius: 12px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
+    .adicionar .btn.lerc { padding: 0 12px; background: var(--surface); box-shadow: var(--shadow); color: var(--text); }
+    .adicionar .btn.lerc svg { width: 24px; height: 24px; }
   </style>
 </head>
 <body>
@@ -233,11 +270,13 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.0';
+  const VERSAO = '1.1';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
   const SUPA_KEY = 'sb_publishable_3q-hGxBzH9c5-CCWt235ng_56AtaAbh';  // chave pública (segura com as regras de acesso)
+  // Avisos no celular: chave pública VAPID (a privada fica só nos segredos da função nl-avisar)
+  const VAPID_PUBLICA = 'BCJ6NfhLU5q8b-gQM1RBORpm7uw-2leaFut-mKeuOmxtDaNVeyYsIBnQtMfscIKJOmnhTWjovUn4iRvRmj7oBM4';
 
   const CATS_PADRAO = ['Hortifruti', 'Padaria', 'Açougue e peixaria', 'Frios e laticínios', 'Mercearia', 'Bebidas',
     'Congelados', 'Limpeza', 'Higiene e beleza', 'Bebê', 'Pet', 'Farmácia', 'Casa e utilidades', 'Outros'];
@@ -282,6 +321,8 @@
     baixo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     lapis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    carrinho: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 001.5 1.2h8.4a1.5 1.5 0 001.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>',
+    codigo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke-width="1.8"/></svg>',
     abaListas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
     abaHist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     abaAjustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>'
@@ -364,6 +405,7 @@
     const novo = Object.assign({}, atual, { nome: item.nome, cat: item.cat, un: item.un || atual.un });
     if (item.preco != null) novo.preco = item.preco;
     if (item.qtd != null) novo.qtd = item.qtd;
+    if (item.foto !== undefined) novo.foto = item.foto;
     if (comprou) {
       novo.vezes = (atual.vezes || 0) + 1;
       novo.porLista = Object.assign({}, atual.porLista, { [item.lista]: ((atual.porLista || {})[item.lista] || 0) + 1 });
@@ -396,19 +438,22 @@
     }
     if (igual && igual.marcado) {
       Store.put('itens', Object.assign({}, igual, { marcado: false, qtd: lido.qtd != null ? lido.qtd : igual.qtd }));
-      Store.concluir(); destacar = igual.id; render(); return;
+      Store.concluir(); AvisoItens.anotar(listaId, igual.nome); destacar = igual.id; render(); return;
     }
     const cat = D().catalogo[norm(nome)];
     const item = {
       id: uid(), lista: listaId, nome: cat ? cat.nome : nome, cat: palpiteCategoria(nome),
       qtd: lido.qtd != null ? lido.qtd : null, un: lido.un || (cat && cat.un) || 'un',
-      obs: '', preco: cat && cat.preco != null ? cat.preco : null, marcado: false, por: meuNome(), criado: Date.now()
+      obs: '', preco: cat && cat.preco != null ? cat.preco : null, foto: (cat && cat.foto) || null,
+      marcado: false, por: meuNome(), criado: Date.now()
     };
     Store.put('itens', item);
     lembrarProduto(item, false);
     Store.concluir();
+    AvisoItens.anotar(listaId, item.nome);
     destacar = item.id;
     render();
+    return item;
   }
 
   function alternarItem(id) {
@@ -441,6 +486,9 @@
     Store.put('compras', compra);
     for (const i of marcados) { lembrarProduto(i, true); Store.put('itens', Object.assign({}, i, { apagado: true })); }
     Store.concluir();
+    Avisos.enviar('compra', `${meuNome() || 'Alguém'} finalizou a compra · ${moeda(total)}`,
+      `${lista.emoji || ''} ${lista.nome} · ${marcados.length} ${marcados.length === 1 ? 'item' : 'itens'}`, listaId);
+    if (euNoMercado()) sairMercado(true);
     render();
     toast(`Compra guardada no histórico · ${moeda(total)}`);
   }
@@ -570,6 +618,9 @@
         }
         M().cursor = maior;
         Store.salvar();
+        // 3) fotos tiradas aqui e avisos que ficaram na fila (falha aqui não derruba a sincronização)
+        if (Object.keys(M().fotosPend || {}).length) await Fotos.enviarPendentes().catch(() => {});
+        if ((M().avisosFila || []).length) Avisos.despachar().catch(() => {});
         this.estado = this.pendentes().length ? 'pendente' : 'ok';
         this.erro = '';
       } catch (e) {
@@ -583,6 +634,357 @@
       }
     }
   };
+
+  /* ---------- "Estou no mercado" + modo mercado ----------
+     Cada pessoa tem um registro em config ("nomercado:<email>") que o outro celular recebe pela sincronização.
+     Vale por até 3 h; termina ao tocar em "Saí" ou ao finalizar a compra. */
+  const LIMITE_MERCADO = 3 * 3600 * 1000;
+  const idMercado = () => 'nomercado:' + norm((Nuvem.sessao && Nuvem.sessao.email) || 'este-aparelho');
+  const nomeLista = (id) => (D().listas[id] ? D().listas[id].nome : 'mercado');
+  const hora = (ms) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const noMercadoAgora = (r) => r && !r.apagado && r.ativo && Date.now() - r.desde < LIMITE_MERCADO;
+  const quemNoMercado = () => Object.values(D().config).filter((c) => c.id.startsWith('nomercado:') && noMercadoAgora(c));
+  const euNoMercado = () => (noMercadoAgora(D().config[idMercado()]) ? D().config[idMercado()] : null);
+  const outroNoMercado = () => quemNoMercado().some((r) => r.id !== idMercado());
+
+  function entrarMercado(listaId, avisar) {
+    Store.put('config', { id: idMercado(), ativo: true, quem: meuNome(), lista: listaId, desde: Date.now() });
+    Store.concluir();
+    M().modoMercado = true; Store.salvar();
+    if (avisar) Avisos.enviar('mercado', `${meuNome() || 'Alguém'} está no ${nomeLista(listaId)} 🛒`, 'Precisa de mais alguma coisa? Adicione agora na lista.', listaId);
+    render();
+  }
+  function sairMercado(semRender) {
+    const r = D().config[idMercado()];
+    if (r && r.ativo) { Store.put('config', Object.assign({}, r, { ativo: false })); Store.concluir(); }
+    M().modoMercado = false; Store.salvar();
+    if (!semRender) render();
+  }
+  function faixasHtml() {
+    const eu = euNoMercado();
+    let h = eu ? `<div class="faixa">🛒 <span style="flex:1">Você está no <b>${esc(nomeLista(eu.lista))}</b>. Toque no item para marcar.</span><button class="btn" data-acao="sair-mercado">Saí</button></div>` : '';
+    for (const r of quemNoMercado().filter((x) => x.id !== idMercado()))
+      h += `<div class="faixa">🛒 <span><b>${esc(r.quem || 'Alguém')}</b> está no ${esc(nomeLista(r.lista))} desde ${hora(r.desde)}. O que você adicionar chega na hora.</span></div>`;
+    return h;
+  }
+  // tela sempre acesa (Wake Lock) enquanto o modo mercado estiver ligado e a lista aberta
+  let travaTela = null;
+  async function aplicarModoMercado() {
+    if (M().modoMercado && !euNoMercado()) { M().modoMercado = false; Store.salvar(); }
+    const ligado = !!M().modoMercado && tela === 'lista';
+    document.body.classList.toggle('modo-mercado', ligado);
+    try {
+      if (ligado && !travaTela && 'wakeLock' in navigator && document.visibilityState === 'visible') {
+        travaTela = await navigator.wakeLock.request('screen');
+        travaTela.addEventListener('release', () => { travaTela = null; });
+      }
+      if (!ligado && travaTela) { const t = travaTela; travaTela = null; await t.release(); }
+    } catch (e) { /* sem suporte: segue sem manter a tela acesa */ }
+  }
+  function abrirIrMercado() {
+    if (euNoMercado()) return confirmar('Saiu do mercado?', 'Desliga o modo mercado e o aviso de que você está lá.', 'Saí do mercado', () => sairMercado(), false);
+    const podeAvisar = Nuvem.configurada() && !!Nuvem.sessao;
+    abrirFolha(`<h2>🛒 Estou no mercado</h2>
+      <p style="color:var(--muted);margin-top:-6px">Liga o modo mercado: letras grandes, tela sempre acesa e um toque no item já marca.</p>
+      ${podeAvisar ? `<div class="linha" style="padding:12px 2px;border:0"><div class="rot">Avisar o outro celular<small>Para lembrarem do que falta enquanto você está lá</small></div>
+        <label class="chave"><input type="checkbox" id="fm-avisar" checked><span></span></label></div>` : ''}
+      <div class="botoes"><button class="btn" data-f="nao">Cancelar</button><button class="btn primario" data-f="sim">Começar</button></div>`, (f) => {
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      $('[data-f=sim]', f).onclick = () => { const av = $('#fm-avisar', f); fecharFolha(); entrarMercado(listaAtual, !!(av && av.checked)); };
+    });
+  }
+
+  /* ---------- orçamento do mês (por lista) ---------- */
+  function gastoNoMes(listaId, ref = Date.now()) {
+    const r = new Date(ref);
+    return ativos('compras').filter((c) => {
+      const d = new Date(c.data);
+      return c.lista === listaId && d.getMonth() === r.getMonth() && d.getFullYear() === r.getFullYear();
+    }).reduce((s, c) => s + (c.total || 0), 0);
+  }
+  function orcHtml(l, ref) {
+    if (!l.orcamento) return '';
+    const g = gastoNoMes(l.id, ref), pct = Math.min(100, (g / l.orcamento) * 100);
+    const mes = new Date(ref || Date.now()).toLocaleDateString('pt-BR', { month: 'long' });
+    return `<div class="orc"><div class="barra${g > l.orcamento ? ' estourou' : ''}"><span style="width:${pct.toFixed(1)}%"></span></div>
+      <small><span>${moeda(g)} de ${moeda(l.orcamento)} em ${esc(mes)}</span><span>${g > l.orcamento ? 'passou ' + moeda(g - l.orcamento) : 'resta ' + moeda(l.orcamento - g)}</span></small></div>`;
+  }
+
+  /* ---------- avisos no celular (Web Push pela função nl-avisar) ---------- */
+  const Avisos = {
+    erro: '',
+    suportado() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; },
+    instalado() { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; },
+    prefs() { return Object.assign({ itens: true, compra: true, mercado: true }, M().avisoPrefs); },
+    chave() {
+      const b = atob(VAPID_PUBLICA.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (VAPID_PUBLICA.length % 4)) % 4));
+      return Uint8Array.from(b, (c) => c.charCodeAt(0));
+    },
+    async inscricao() {
+      if (!this.suportado()) return null;
+      const reg = await navigator.serviceWorker.ready;
+      return reg.pushManager.getSubscription();
+    },
+    async ativar() {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('Permissão negada. Libere em Ajustes do iPhone › Notificações › Nossa Lista.');
+      const reg = await navigator.serviceWorker.ready;
+      const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.chave() }));
+      await this.registrar(sub);
+    },
+    // cadastra (ou atualiza nome/preferências) deste celular na nuvem
+    async registrar(sub) {
+      sub = sub || (await this.inscricao());
+      if (!sub || !Nuvem.ativa()) return;
+      await Nuvem.api('lc_push?on_conflict=endpoint', {
+        method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ endpoint: sub.endpoint, assinatura: sub.toJSON(), nome: meuNome(), prefs: this.prefs(), atualizado_em: new Date().toISOString() })
+      });
+    },
+    async desligar() {
+      const sub = await this.inscricao();
+      if (!sub) return;
+      try { await Nuvem.api('lc_push?endpoint=eq.' + encodeURIComponent(sub.endpoint), { method: 'DELETE' }); } catch (e) {}
+      await sub.unsubscribe();
+    },
+    enfileirar(tipo, titulo, corpo, listaId) {
+      if (!Nuvem.configurada() || !Nuvem.sessao) return;
+      M().avisosFila = (M().avisosFila || []).concat([{ tipo, titulo, corpo, url: listaId ? '?lista=' + listaId : '', tag: tipo + '-' + (listaId || ''), em: Date.now() }]).slice(-20);
+      Store.salvar();
+    },
+    enviar(tipo, titulo, corpo, listaId) { this.enfileirar(tipo, titulo, corpo, listaId); this.despachar().catch(() => {}); },
+    chamar(corpo, keepalive) {
+      return Nuvem.token().then((tk) => fetch(`${SUPA_URL}/functions/v1/nl-avisar`, {
+        method: 'POST', keepalive: !!keepalive,
+        headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify(corpo)
+      }));
+    },
+    // manda a fila; sem internet, fica para a próxima sincronização (aviso com mais de 30 min é descartado)
+    async despachar(keepalive) {
+      if (this.enviando) return;
+      M().avisosFila = (M().avisosFila || []).filter((a) => Date.now() - a.em < 30 * 60 * 1000);
+      if (!M().avisosFila.length || !Nuvem.ativa() || !navigator.onLine) return;
+      this.enviando = true;
+      try {
+        while (M().avisosFila.length) {
+          const r = await this.chamar(M().avisosFila[0], keepalive);
+          M().avisosFila.shift(); Store.salvar();
+          this.erro = r.ok ? '' : `aviso não enviado (${r.status})`;
+        }
+      } finally { this.enviando = false; }
+    }
+  };
+
+  // Itens adicionados viram UM aviso: espera 45 s sem novidades (4 s se o outro está no mercado)
+  // ou sai na hora em que o app é fechado
+  const AvisoItens = {
+    timer: null,
+    anotar(listaId, nome) {
+      if (!Nuvem.configurada() || !Nuvem.sessao) return;
+      const p = (M().avisoItens = M().avisoItens || {});
+      (p[listaId] = p[listaId] || []).push(nome);
+      Store.salvar();
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.soltar(), outroNoMercado() ? 4000 : 45000);
+    },
+    soltar(keepalive) {
+      clearTimeout(this.timer);
+      const p = M().avisoItens || {};
+      M().avisoItens = {};
+      for (const [lid, nomes] of Object.entries(p)) {
+        const l = D().listas[lid], unicos = [...new Set(nomes)];
+        if (!l || !unicos.length) continue;
+        const quem = meuNome() || 'Alguém';
+        Avisos.enfileirar('itens', unicos.length === 1 ? `${quem} adicionou ${unicos[0]}` : `${quem} adicionou ${unicos.length} itens`,
+          `${l.emoji || ''} ${l.nome}: ${unicos.slice(0, 6).join(', ')}${unicos.length > 6 ? '…' : ''}`, lid);
+      }
+      Store.salvar();
+      Avisos.despachar(keepalive).catch(() => {});
+    }
+  };
+
+  async function atualizarAvisosUI() {
+    const el = $('#avisos');
+    if (!el) return;
+    const msg = (t) => `<div class="linha"><div class="rot" style="color:var(--muted);font-size:15px">${t}</div></div>`;
+    if (!Nuvem.configurada() || !Nuvem.sessao) { el.innerHTML = msg('Entre na conta para receber avisos.'); return; }
+    if (!Avisos.suportado()) {
+      el.innerHTML = msg(Avisos.instalado() ? 'Este iPhone não recebe avisos (precisa do iOS 16.4 ou mais novo).'
+        : 'Para receber avisos, instale o app: no Safari, <b>Compartilhar › Adicionar à Tela de Início</b>, e abra pelo ícone.');
+      return;
+    }
+    if (Notification.permission === 'denied') { el.innerHTML = msg('Avisos bloqueados. Libere em <b>Ajustes do iPhone › Notificações › Nossa Lista</b>.'); return; }
+    const sub = await Avisos.inscricao().catch(() => null);
+    if (!$('#avisos')) return;
+    if (!sub) {
+      el.innerHTML = `<div class="linha"><div class="rot">Avise quando o outro mexer na lista<small>Itens novos, compra finalizada e quando alguém chega ao mercado</small></div></div>
+        <div class="linha"><button class="btn primario largo" data-acao="ativar-avisos">Ativar avisos</button></div>`;
+      return;
+    }
+    const p = Avisos.prefs();
+    const chave = (k, rot, sub2) => `<div class="linha"><div class="rot">${rot}<small>${sub2}</small></div><label class="chave"><input type="checkbox" data-pref="${k}" ${p[k] ? 'checked' : ''}><span></span></label></div>`;
+    el.innerHTML = chave('itens', 'Itens adicionados', 'Ex.: “Ana adicionou 3 itens no Mercado”') +
+      chave('compra', 'Compra finalizada', 'Com o total da compra') +
+      chave('mercado', 'Chegou ao mercado', 'Quando o outro toca em “Estou no mercado”') +
+      `<div class="linha" style="gap:8px"><button class="btn" style="flex:1" data-acao="testar-avisos">Enviar teste</button><button class="btn perigo" style="flex:1" data-acao="desligar-avisos">Desligar</button></div>`;
+  }
+
+  /* ---------- fotos dos itens ----------
+     Ficam no aparelho (Cache Storage) e sobem para a pasta privada lc-fotos do Supabase. */
+  const Fotos = {
+    urls: {}, erro: '',
+    abrir() { return caches.open('nossalista-fotos'); },
+    chave(p) { return new URL('fotos/' + p, location.href).href; },
+    async guardar(p, blob) { const c = await this.abrir(); await c.put(this.chave(p), new Response(blob, { headers: { 'Content-Type': 'image/jpeg' } })); },
+    async nova(arquivo) {
+      const blob = await comprimirFoto(arquivo);
+      const p = uid() + '.jpg';
+      await this.guardar(p, blob);
+      this.urls[p] = URL.createObjectURL(blob);
+      M().fotosPend = Object.assign({}, M().fotosPend, { [p]: 1 });
+      Store.salvar(); Nuvem.agendar();
+      return p;
+    },
+    async url(p) {
+      if (this.urls[p]) return this.urls[p];
+      try {
+        const c = await this.abrir();
+        let r = await c.match(this.chave(p));
+        if (!r && Nuvem.ativa() && navigator.onLine) {
+          const resp = await fetch(`${SUPA_URL}/storage/v1/object/authenticated/lc-fotos/${encodeURIComponent(p)}`, { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + (await Nuvem.token()) } });
+          if (resp.ok) { const b = await resp.blob(); await this.guardar(p, b); return (this.urls[p] = URL.createObjectURL(b)); }
+        }
+        if (!r) return null;
+        return (this.urls[p] = URL.createObjectURL(await r.blob()));
+      } catch (e) { return null; }
+    },
+    async enviarPendentes() {
+      const pend = Object.assign({}, M().fotosPend);
+      const c = await this.abrir();
+      for (const p of Object.keys(pend)) {
+        const r = await c.match(this.chave(p));
+        if (!r) { delete pend[p]; continue; }
+        const resp = await fetch(`${SUPA_URL}/storage/v1/object/lc-fotos/${encodeURIComponent(p)}`, {
+          method: 'POST', headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + (await Nuvem.token()), 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: await r.blob()
+        });
+        if (resp.ok) { delete pend[p]; this.erro = ''; }
+        else { this.erro = (await resp.text()).slice(0, 120); break; }
+      }
+      M().fotosPend = pend; Store.salvar();
+    }
+  };
+  async function comprimirFoto(arquivo) {
+    const url = URL.createObjectURL(arquivo);
+    try {
+      const img = new Image();
+      await new Promise((ok, erro) => { img.onload = ok; img.onerror = erro; img.src = url; });
+      const k = Math.min(1, 1000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      const blob = await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.78));
+      if (!blob) throw new Error('foto');
+      return blob;
+    } finally { URL.revokeObjectURL(url); }
+  }
+  function pintarFotos(raiz) {
+    $$('img[data-foto]', raiz).forEach((img) => { if (!img.src) Fotos.url(img.dataset.foto).then((u) => { if (u) img.src = u; }); });
+  }
+  function verFoto(p, titulo) {
+    abrirFolha(`<h2>${esc(titulo || 'Foto')}</h2><img class="foto-grande" data-foto="${esc(p)}" alt="">
+      <div class="botoes"><button class="btn" data-f="ok">Fechar</button></div>`, (f) => { pintarFotos(f); $('[data-f=ok]', f).onclick = () => fecharFolha(); });
+  }
+
+  /* ---------- código de barras (biblioteca ZXing, carregada só quando usa) ---------- */
+  let zxingCarregando = null;
+  function carregarZXing() {
+    if (window.ZXing) return Promise.resolve();
+    return (zxingCarregando = zxingCarregando || new Promise((ok, erro) => {
+      const s = document.createElement('script');
+      s.src = 'zxing.min.js';
+      s.onload = ok;
+      s.onerror = () => { zxingCarregando = null; erro(new Error('não foi possível carregar o leitor')); };
+      document.head.append(s);
+    }));
+  }
+  // Tela cheia por cima de tudo (não fecha a folha de edição que estiver aberta)
+  async function lerCodigo(aoLer) {
+    const camada = document.createElement('div');
+    camada.className = 'leitor-tela';
+    camada.innerHTML = `<h2>Ler código de barras</h2><div class="leitor"><video playsinline muted autoplay></video><div class="mira"></div></div>
+      <p id="leitor-msg" style="text-align:center;color:var(--muted)">Aponte para o código de barras da embalagem</p>
+      <form><input id="leitor-num" inputmode="numeric" placeholder="ou digite o número"><button class="btn primario">OK</button></form>
+      <div class="botoes"><button type="button" class="btn largo" data-f="nao">Cancelar</button></div>`;
+    document.body.append(camada);
+    let leitor = null, acabou = false;
+    const terminar = (cod) => {
+      if (acabou) return;
+      acabou = true;
+      try { leitor && leitor.reset(); } catch (e) {}
+      camada.remove();
+      if (cod) aoLer(cod);
+    };
+    $('[data-f=nao]', camada).onclick = () => terminar();
+    $('form', camada).onsubmit = (e) => { e.preventDefault(); const v = $('#leitor-num', camada).value.replace(/\D/g, ''); if (v) terminar(v); };
+    try {
+      await carregarZXing();
+      if (acabou) return;
+      const F = ZXing.BarcodeFormat;
+      const dicas = new Map([[ZXing.DecodeHintType.POSSIBLE_FORMATS, [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128]]]);
+      leitor = new ZXing.BrowserMultiFormatReader(dicas, 250);
+      await leitor.decodeFromConstraints({ video: { facingMode: 'environment' } }, $('video', camada), (res) => { if (res) terminar(res.getText()); });
+      if (acabou) try { leitor.reset(); } catch (e) {}
+    } catch (e) {
+      const m = $('#leitor-msg', camada);
+      if (m) m.textContent = /NotAllowed|Permission/i.test((e && e.name) + (e && e.message)) ? 'Sem acesso à câmera. Libere em Ajustes do iPhone › Safari › Câmera, ou digite o número.' : 'Não foi possível abrir a câmera. Digite o número abaixo.';
+    }
+  }
+  const produtoPorCodigo = (cod) => ativos('catalogo').find((c) => (c.codigos || []).includes(cod));
+  function vincularCodigo(nome, cod) {
+    const id = norm(nome);
+    for (const c of ativos('catalogo').filter((x) => x.id !== id && (x.codigos || []).includes(cod)))  // um código, um produto
+      Store.put('catalogo', Object.assign({}, c, { codigos: c.codigos.filter((k) => k !== cod) }));
+    const atual = D().catalogo[id] || { id, nome, vezes: 0, porLista: {} };
+    Store.put('catalogo', Object.assign({}, atual, { codigos: [...new Set([...(atual.codigos || []), cod])] }));
+    Store.concluir();
+  }
+  async function nomePeloCodigo(cod) {
+    // Open Food Facts: base aberta de produtos (nem todo produto brasileiro está lá)
+    try {
+      const ctl = new AbortController(); setTimeout(() => ctl.abort(), 5000);
+      const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(cod)}.json?fields=product_name,product_name_pt,brands,quantity`, { signal: ctl.signal });
+      const d = await r.json();
+      const p = d && d.product;
+      if (!p) return '';
+      const nome = (p.product_name_pt || p.product_name || '').trim();
+      const marca = (p.brands || '').split(',')[0].trim();
+      return [nome, marca && !norm(nome).includes(norm(marca)) ? marca : '', p.quantity || ''].filter(Boolean).join(' ').trim();
+    } catch (e) { return ''; }
+  }
+  function codigoLido(cod) {
+    const prod = produtoPorCodigo(cod);
+    if (prod) { adicionarItem(listaAtual, prod.nome); toast(`${prod.nome} na lista`); return; }
+    abrirFolha(`<h2>Produto novo</h2><p style="color:var(--muted);margin-top:-6px">Código ${esc(cod)}. Da próxima vez ele entra direto.</p>
+      <form><div class="campo"><label>Nome</label><input id="fn-nome" placeholder="Buscando o nome…" autocapitalize="sentences"></div>
+      <div class="botoes"><button type="button" class="btn" data-f="nao">Cancelar</button><button class="btn primario">Adicionar</button></div></form>`, (f) => {
+      const campo = $('#fn-nome', f);
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      $('form', f).onsubmit = (e) => {
+        e.preventDefault();
+        const nome = campo.value.trim();
+        if (!nome) return;
+        fecharFolha();
+        const item = adicionarItem(listaAtual, nome);
+        vincularCodigo(item ? item.nome : capitalizar(nome), cod);
+      };
+      nomePeloCodigo(cod).then((n) => {
+        if (!campo.isConnected) return;
+        campo.placeholder = 'Ex.: Café Pilão 500 g';
+        if (n && !campo.value) campo.value = n;
+        campo.focus();
+      });
+    });
+  }
 
   /* ---------- interface ---------- */
   let tela = 'listas', listaAtual = null, destacar = null;
@@ -629,6 +1031,7 @@
   function render(remoto) {
     if (Nuvem.precisaLogin()) return telaLogin();
     if (tela === 'lista' && (!listaAtual || !D().listas[listaAtual] || D().listas[listaAtual].apagado)) tela = 'listas';
+    aplicarModoMercado();
     if (remoto && tela === 'ajustes') return;
     if (tela === 'lista' && $('#campo-item')) { atualizarLista(); return; }
     document.body.classList.remove('com-rodape');
@@ -636,7 +1039,7 @@
     if (tela === 'listas') app.innerHTML = telaListas();
     else if (tela === 'lista') { app.innerHTML = telaLista(); atualizarLista(); }
     else if (tela === 'historico') app.innerHTML = telaHistorico();
-    else if (tela === 'ajustes') app.innerHTML = telaAjustes();
+    else if (tela === 'ajustes') { app.innerHTML = telaAjustes(); atualizarAvisosUI(); }
     mostrarEstado();
   }
   function ir(t, id) { tela = t; if (id) listaAtual = id; $('#app').innerHTML = ''; render(); window.scrollTo(0, 0); }
@@ -648,21 +1051,23 @@
       const its = itensDa(l.id), falta = its.filter((i) => !i.marcado).length, car = its.length - falta;
       const det = its.length ? `${falta} ${falta === 1 ? 'item' : 'itens'} para comprar${car ? ` · ${car} no carrinho` : ''}` : 'Vazia';
       return `<button class="cartao lista-card" data-abrir="${esc(l.id)}"><span class="emoji">${esc(l.emoji || '🛒')}</span>
-        <span class="info"><div class="nome">${esc(l.nome)}</div><div class="det">${det}</div></span><span class="seta">›</span></button>`;
+        <span class="info"><div class="nome">${esc(l.nome)}</div><div class="det">${det}</div>${orcHtml(l)}</span><span class="seta">›</span></button>`;
     }).join('');
     return cabecalho('Nossa Lista', { direita: `<button class="btn-icone" data-acao="nova-lista" aria-label="Nova lista">${ICONE.mais}</button>` }) +
-      `<main><div class="listas" style="margin-top:8px">${cards}</div>
+      `<main>${faixasHtml()}<div class="listas" style="margin-top:8px">${cards}</div>
       <button class="btn largo" style="margin-top:14px" data-acao="nova-lista">${ICONE.mais.replace('<svg', '<svg width="18" height="18"')} Nova lista</button></main>` + abas();
   }
 
   /* tela: lista aberta */
   function telaLista() {
     const l = D().listas[listaAtual];
-    return cabecalho(`${l.emoji || ''} ${l.nome}`, { voltar: true, direita: `<button class="btn-icone" data-acao="menu-lista" aria-label="Opções">${ICONE.menu}</button>` }) +
+    return cabecalho(`${l.emoji || ''} ${l.nome}`, { voltar: true, direita: `<button class="btn-icone" data-acao="ir-mercado" aria-label="Estou no mercado">${ICONE.carrinho}</button><button class="btn-icone" data-acao="menu-lista" aria-label="Opções">${ICONE.menu}</button>` }) +
       `<main>
+        <div id="faixas"></div>
         <div class="adicionar">
           <form id="form-item" autocomplete="off" style="position:relative">
-            <input id="campo-item" enterkeyhint="done" placeholder="Adicionar item (ex.: 2 kg arroz)" autocapitalize="sentences">
+            <input id="campo-item" enterkeyhint="done" placeholder="Adicionar (ex.: 2 kg arroz)" autocapitalize="sentences">
+            <button type="button" class="btn lerc" data-acao="ler-codigo" aria-label="Ler código de barras">${ICONE.codigo}</button>
             <button class="btn primario" aria-label="Adicionar">${ICONE.mais.replace('<svg', '<svg width="20" height="20"')}</button>
             <div class="sugestoes oculto" id="sugestoes"></div>
           </form>
@@ -680,8 +1085,10 @@
       const v = valorItem(i), det = detalheItem(i, true);
       return `<div class="item${i.marcado ? ' marcado' : ''}${destacar === i.id ? ' novo' : ''}" data-id="${esc(i.id)}">
         <button class="check" data-marcar="${esc(i.id)}" aria-label="${i.marcado ? 'Desmarcar' : 'Marcar'} ${esc(i.nome)}"><span>${ICONE.check}</span></button>
+        ${i.foto ? `<button class="ver-foto" data-verfoto="${esc(i.foto)}" data-titulo="${esc(i.nome)}" aria-label="Ver foto"><img class="foto" data-foto="${esc(i.foto)}" alt=""></button>` : ''}
         <button class="corpo" data-editar="${esc(i.id)}"><div class="nome">${esc(i.nome)}</div>${det ? `<div class="det">${esc(det)}</div>` : ''}</button>
-        ${v != null ? `<div class="valor">${moeda(v)}</div>` : ''}</div>`;
+        ${v != null ? `<div class="valor">${moeda(v)}</div>` : ''}
+        <button class="lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome)}">${ICONE.lapis}</button></div>`;
     };
     let html = '';
     if (!its.length) html = `<div class="vazio"><div class="grande">🧺</div>Lista vazia.<br>Digite acima o que precisa comprar.</div>`;
@@ -697,9 +1104,20 @@
     const rod = $('#rodape');
     rod.classList.toggle('oculto', !its.length);
     document.body.classList.toggle('com-rodape', !!its.length);
+    // orçamento do mês: quanto sobra (ou passa) contando o que já está no carrinho
+    const l = D().listas[listaAtual];
+    let orc = '';
+    if (l.orcamento) {
+      const resta = l.orcamento - gastoNoMes(listaAtual) - tCar;
+      orc = `<small style="display:block;color:${resta < 0 ? 'var(--danger)' : 'var(--muted)'}">${resta < 0 ? `Passa ${moeda(-resta)} do orçamento` : `Orçamento: resta ${moeda(resta)}`}</small>`;
+    }
     rod.innerHTML = `<div class="cartao"><div class="totais"><small>No carrinho (${car.length})</small><b>${moeda(tCar)}</b>
-      <small>${tTudo ? `Lista ${moeda(tTudo)}` : ''}${tTudo && semPreco ? ' · ' : ''}${semPreco ? `${semPreco} sem preço` : ''}</small></div>
+      <small>${tTudo ? `Lista ${moeda(tTudo)}` : ''}${tTudo && semPreco ? ' · ' : ''}${semPreco ? `${semPreco} sem preço` : ''}</small>${orc}</div>
       <button class="btn primario" data-acao="finalizar" ${car.length ? '' : 'disabled'}>Finalizar compra</button></div>`;
+    $('#faixas').innerHTML = faixasHtml();
+    const bm = $('[data-acao=ir-mercado]');
+    if (bm) bm.classList.toggle('ativo', !!euNoMercado());
+    pintarFotos($('#conteudo'));
     atualizarChips();
     mostrarEstado();
   }
@@ -734,8 +1152,11 @@
     for (const c of compras) { const k = nomeMes(c.data); (porMes[k] = porMes[k] || []).push(c); }
     for (const [mes, lista] of Object.entries(porMes)) {
       const tot = lista.reduce((s, c) => s + (c.total || 0), 0);
+      const ref = lista[0].data;
+      const orcs = listasOrdenadas().filter((l) => l.orcamento).map((l) => `<div style="font-size:13.5px;margin-top:6px">${esc(l.emoji || '')} ${esc(l.nome)}</div>${orcHtml(l, ref)}`).join('');
       html += `<div class="titulo-secao">${esc(mes)}</div><div class="cartao">
         <div class="mes"><span>${lista.length} ${lista.length === 1 ? 'compra' : 'compras'}</span><b>${moeda(tot)}</b></div>
+        ${orcs ? `<div class="orc-hist">${orcs}</div>` : ''}
         ${lista.map((c) => `<button class="compra" data-compra="${esc(c.id)}"><span style="font-size:24px">${esc(c.emoji || '🛒')}</span>
           <span class="info"><div>${esc(c.nomeLista)} · ${dataCurta(c.data)}</div><div class="det">${c.itens.length} ${c.itens.length === 1 ? 'item' : 'itens'}${c.por ? ' · ' + esc(c.por) : ''}</div></span>
           <span class="total">${moeda(c.total)}</span></button>`).join('')}</div>`;
@@ -757,6 +1178,9 @@
 
       <div class="titulo-secao">Sincronização</div>
       <div class="cartao" style="padding:14px"><div id="info-nuvem" style="color:var(--muted);font-size:15px">${textoNuvem()}</div>${nuvem}</div>
+
+      <div class="titulo-secao">Avisos no celular</div>
+      <div class="cartao" id="avisos"><div class="linha"><div class="rot" style="color:var(--muted)">Verificando…</div></div></div>
 
       <div class="titulo-secao">No mercado</div>
       <div class="cartao"><div class="linha"><div class="rot">Pedir o preço ao marcar<small>Abre o campo de preço quando você marca um item</small></div>
@@ -848,8 +1272,38 @@
       </div>
       <div class="campo"><label>Observação</label><input id="fi-obs" value="${esc(i.obs || '')}" placeholder="Ex.: marca X, sem lactose" autocapitalize="sentences"></div>
       <div class="campo"><label>Lista</label><select id="fi-lista">${opListas}</select></div>
+      <div class="campo"><label>Foto</label><div class="foto-campo" id="fi-foto-area"></div></div>
+      <div class="campo"><label>Código de barras</label><div class="foto-campo"><span id="fi-cods" style="color:var(--muted);font-size:14px;flex:1"></span>
+        <button type="button" class="btn" data-f="vincular">${ICONE.codigo.replace('<svg', '<svg width="20" height="20"')} Ler</button></div></div>
       ${quem ? `<p style="color:var(--muted);font-size:13px;margin:0 2px">${esc(quem)}</p>` : ''}
       <div class="botoes"><button type="button" class="btn perigo" data-f="apagar">Excluir</button><button class="btn primario">Salvar</button></div></form>`, (f) => {
+      // foto: tirada agora fica no aparelho e sobe para a nuvem na sincronização
+      let foto = i.foto || null;
+      const desenharFoto = () => {
+        $('#fi-foto-area', f).innerHTML = `${foto ? `<img data-foto="${esc(foto)}" alt="">` : ''}
+          <label class="btn">📷 ${foto ? 'Trocar' : 'Adicionar foto'}<input type="file" accept="image/*" class="oculto" id="fi-arquivo"></label>
+          ${foto ? '<button type="button" class="btn perigo" data-f="sem-foto">Tirar</button>' : ''}`;
+        pintarFotos(f);
+        $('#fi-arquivo', f).onchange = async (e) => {
+          const arq = e.target.files[0];
+          if (!arq) return;
+          try { foto = await Fotos.nova(arq); desenharFoto(); }
+          catch (x) { toast('Não foi possível usar esta foto'); }
+        };
+        const sem = $('[data-f=sem-foto]', f);
+        if (sem) sem.onclick = () => { foto = null; desenharFoto(); };
+      };
+      desenharFoto();
+      const desenharCods = () => {
+        const c = D().catalogo[norm(i.nome)];
+        const cods = (c && c.codigos) || [];
+        $('#fi-cods', f).textContent = cods.length ? cods.join(', ') : 'Nenhum: leia para o item entrar direto da próxima vez';
+      };
+      desenharCods();
+      $('[data-f=vincular]', f).onclick = () => {
+        const nomeAtual = $('#fi-nome', f).value.trim() || i.nome;
+        lerCodigo((cod) => { vincularCodigo(nomeAtual, cod); desenharCods(); toast(`Código ${cod} ligado a ${nomeAtual}`); });
+      };
       $$('[data-q]', f).forEach((b) => (b.onclick = () => {
         const passo = ['kg', 'L'].includes($('#fi-un', f).value) ? 0.5 : ['g', 'ml'].includes($('#fi-un', f).value) ? 100 : 1;
         const atual = numero($('#fi-qtd', f).value);
@@ -865,7 +1319,7 @@
         const atual = D().itens[id];
         const novo = Object.assign({}, atual, {
           nome, qtd: numero($('#fi-qtd', f).value), un: $('#fi-un', f).value, preco: numero($('#fi-preco', f).value),
-          cat: $('#fi-cat', f).value, obs: $('#fi-obs', f).value.trim(), lista: $('#fi-lista', f).value
+          cat: $('#fi-cat', f).value, obs: $('#fi-obs', f).value.trim(), lista: $('#fi-lista', f).value, foto
         });
         if (novo.qtd === 0) novo.qtd = null;
         Store.put('itens', novo);
@@ -899,6 +1353,7 @@
     abrirFolha(`<h2>${id ? 'Editar lista' : 'Nova lista'}</h2><form>
       <div class="campo"><label>Nome</label><input id="fl-nome" value="${esc(l.nome)}" placeholder="Ex.: Churrasco, Casa" autocapitalize="sentences"></div>
       <div class="campo"><label>Ícone</label><div class="emojis">${EMOJIS.map((e) => `<button type="button" data-emoji="${e}" class="${e === emoji ? 'sel' : ''}">${e}</button>`).join('')}</div></div>
+      <div class="campo"><label>Orçamento do mês (opcional)</label><input id="fl-orc" inputmode="decimal" placeholder="Ex.: 1.500,00" value="${l.orcamento ? esc(fmtNum(l.orcamento)) : ''}"></div>
       <div class="botoes"><button type="button" class="btn" data-f="nao">Cancelar</button><button class="btn primario">${id ? 'Salvar' : 'Criar lista'}</button></div></form>`, (f) => {
       $$('[data-emoji]', f).forEach((b) => (b.onclick = () => { emoji = b.dataset.emoji; $$('[data-emoji]', f).forEach((x) => x.classList.toggle('sel', x === b)); }));
       $('[data-f=nao]', f).onclick = () => fecharFolha();
@@ -907,7 +1362,8 @@
         const nome = $('#fl-nome', f).value.trim();
         if (!nome) return;
         const ordem = id ? l.ordem : Math.max(0, ...listasOrdenadas().map((x) => x.ordem || 0)) + 1;
-        const nova = Store.put('listas', Object.assign({}, id ? l : { id: uid() }, { nome, emoji, ordem }));
+        const orcamento = numero($('#fl-orc', f).value) || null;
+        const nova = Store.put('listas', Object.assign({}, id ? l : { id: uid() }, { nome, emoji, ordem, orcamento }));
         Store.concluir(); fecharFolha();
         if (id) render(); else ir('lista', nova.id);
       };
@@ -920,7 +1376,7 @@
     const its = itensDa(listaAtual), car = its.filter((i) => i.marcado);
     abrirFolha(`<h2>${esc(l.emoji || '')} ${esc(l.nome)}</h2><div class="menu">
       <button data-m="compartilhar">📤 Enviar a lista (WhatsApp, Mensagens…)</button>
-      <button data-m="editar">✏️ Renomear / trocar ícone</button>
+      <button data-m="editar">✏️ Renomear, ícone e orçamento</button>
       ${car.length ? '<button data-m="desmarcar">↩️ Desmarcar todos</button><button data-m="tirar">🧹 Tirar os marcados sem guardar no histórico</button>' : ''}
       ${its.length ? '<button data-m="limpar" class="perigo">🗑️ Esvaziar a lista</button>' : ''}
       <button data-m="apagar" class="perigo">❌ Excluir a lista</button></div>`, (f) => {
@@ -1019,7 +1475,9 @@
     if (d.aba) return ir(d.aba);
     if (d.abrir) return ir('lista', d.abrir);
     if (d.marcar) return alternarItem(d.marcar);
-    if (d.editar) return abrirItem(d.editar);
+    // no modo mercado, tocar no nome já marca; o lápis abre a edição
+    if (d.editar) return document.body.classList.contains('modo-mercado') && t.classList.contains('corpo') ? alternarItem(d.editar) : abrirItem(d.editar);
+    if (d.verfoto) return verFoto(d.verfoto, d.titulo);
     if (d.compra) return abrirCompra(d.compra);
     if (d.chip) { adicionarItem(listaAtual, d.chip); return; }
     if (d.sug) { $('#campo-item').value = ''; $('#sugestoes').classList.add('oculto'); adicionarItem(listaAtual, d.sug); $('#campo-item').focus(); return; }
@@ -1042,6 +1500,25 @@
       case 'sair': return confirmar('Sair desta conta?', 'A lista continua neste aparelho, mas para de sincronizar até você entrar de novo.', 'Sair', () => { Nuvem.sair(); try { localStorage.setItem('nossalista_modo', 'local'); } catch (x) {} render(); });
       case 'entrar': try { localStorage.removeItem('nossalista_modo'); } catch (x) {} return render();
       case 'so-aparelho': try { localStorage.setItem('nossalista_modo', 'local'); } catch (x) {} if (Nuvem.sessao) Nuvem.sair(); return ir('listas');
+      case 'ir-mercado': return abrirIrMercado();
+      case 'sair-mercado': return sairMercado();
+      case 'ler-codigo': return lerCodigo(codigoLido);
+      case 'ativar-avisos':
+        t.disabled = true;
+        Avisos.ativar().then(() => { toast('Avisos ligados'); atualizarAvisosUI(); })
+          .catch((x) => { t.disabled = false; toast(x.message || 'Não foi possível ligar os avisos'); atualizarAvisosUI(); });
+        return;
+      case 'testar-avisos':
+        t.disabled = true;
+        Avisos.registrar().then(() => Avisos.chamar({ tipo: 'teste', titulo: 'Nossa Lista', corpo: 'Aviso de teste: está funcionando ✓', tag: 'teste', teste: true }))
+          .then(async (r) => {
+            const d2 = await r.json().catch(() => ({}));
+            toast(r.ok ? (d2.enviados ? 'Aviso de teste enviado' : 'Nenhum celular cadastrado recebeu') : r.status === 404 ? 'Falta criar a função nl-avisar no Supabase' : 'Erro: ' + (d2.detalhe || d2.erro || r.status));
+          })
+          .catch(() => toast('Sem internet'))
+          .finally(() => { t.disabled = false; });
+        return;
+      case 'desligar-avisos': return confirmar('Desligar os avisos?', 'Este celular para de receber avisos da lista.', 'Desligar', () => Avisos.desligar().then(atualizarAvisosUI, atualizarAvisosUI));
     }
   });
 
@@ -1079,14 +1556,22 @@
     if (e.target.id === 'campo-item') atualizarSugestoes();
   });
   document.addEventListener('change', (e) => {
-    if (e.target.id === 'meu-nome') { M().nome = e.target.value.trim(); Store.salvar(); toast('Nome salvo'); }
+    if (e.target.id === 'meu-nome') { M().nome = e.target.value.trim(); Store.salvar(); toast('Nome salvo'); Avisos.registrar().catch(() => {}); }
+    if (e.target.dataset && e.target.dataset.pref) {
+      M().avisoPrefs = Object.assign(Avisos.prefs(), { [e.target.dataset.pref]: e.target.checked });
+      Store.salvar();
+      Avisos.registrar().catch(() => toast('Sem internet: a escolha vale quando voltar'));
+    }
     if (e.target.id === 'pedir-preco') { M().pedirPreco = e.target.checked; Store.salvar(); }
     if (e.target.id === 'arquivo-backup' && e.target.files[0]) { restaurar(e.target.files[0]); e.target.value = ''; }
   });
 
   // Atualização "ao vivo": com o app aberto, confere a nuvem a cada 4 s (uma consulta leve)
   setInterval(() => { if (document.visibilityState === 'visible' && !Nuvem.rodando) Nuvem.sincronizar(); }, 4000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') Nuvem.agendar(50); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { Nuvem.agendar(50); aplicarModoMercado(); }
+    else if (Object.keys(M().avisoItens || {}).length) AvisoItens.soltar(true);  // fechou o app: avisa já o que foi adicionado
+  });
   window.addEventListener('online', () => Nuvem.agendar(50));
   window.addEventListener('offline', () => { Nuvem.estado = 'offline'; mostrarEstado(); });
   window.addEventListener('storage', (e) => { if (e.key === CHAVE) { Store.carregar(); render(true); } });
@@ -1095,9 +1580,17 @@
   Store.carregar();
   Nuvem.carregar();
   if (Nuvem.ativa()) Nuvem.estado = 'pendente';
+  // aberto pelo toque num aviso: vai direto para a lista (?lista=id)
+  const pedida = new URLSearchParams(location.search).get('lista');
+  if (pedida && D().listas[pedida] && !D().listas[pedida].apagado) { tela = 'lista'; listaAtual = pedida; }
+  if (pedida) history.replaceState(null, '', location.pathname);
   render();
   Nuvem.agendar(50);
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (Object.keys(M().avisoItens || {}).length) AvisoItens.soltar();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+    if (Nuvem.ativa()) Avisos.registrar().catch(() => {});  // mantém nome e preferências em dia na nuvem
+  }
   </script>
 </body>
 </html>

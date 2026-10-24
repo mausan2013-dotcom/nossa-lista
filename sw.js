@@ -1,6 +1,6 @@
 // Nossa Lista — service worker: deixa o app abrir sem internet (mercado sem sinal).
 // Estratégia: rede primeiro (pega a versão nova quando há internet), cache como reserva.
-const CACHE = 'nossalista-20261024105335';
+const CACHE = 'nossalista-20261024111552';
 const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -10,7 +10,8 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      // as fotos dos itens ('nossalista-fotos') ficam: só a cópia antiga do app é apagada
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== 'nossalista-fotos').map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -28,4 +29,22 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html')))
   );
+});
+
+// Aviso do outro celular (enviado pela função nl-avisar do Supabase)
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Nossa Lista', {
+    body: d.body || '', icon: 'icon-192.png', badge: 'icon-192.png', tag: d.tag, renotify: !!d.tag, data: { url: d.url || '' }
+  }));
+});
+// Toque no aviso: abre o app (ou traz para frente) já na lista certa
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const alvo = new URL('./' + ((e.notification.data && e.notification.data.url) || ''), self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
+    for (const j of janelas) if (j.url.startsWith(self.registration.scope)) return j.focus().then(() => j.navigate(alvo));
+    return self.clients.openWindow(alvo);
+  }));
 });
