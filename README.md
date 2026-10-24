@@ -31,6 +31,9 @@ Publicar mudanças: `~/.local/bin/publica-nossa-lista "mensagem"`.
 - **v1.1** — Foto do item (fica no aparelho e na pasta privada `lc-fotos`; o produto lembra a foto para as próximas vezes)
 - **v1.1** — Orçamento do mês por lista: barra na tela inicial, "resta/passa" no rodapé (contando o carrinho) e no histórico
 
+- **v1.2** — Arrastar o item: para a **direita** marca (ou desmarca, se já está no carrinho); para a **esquerda** apaga, com "Desfazer". A rolagem vertical segue normal; começar colado na borda esquerda é o gesto de voltar do iPhone e é ignorado. Uma dica aparece uma vez.
+- **v1.2** — Editar compra feita (Histórico → toque na compra): preencher/corrigir preço e quantidade de cada item (total ao vivo), tirar ou incluir item, mudar a data. O histórico mostra "N sem preço" nas compras com preço faltando. O preço salvo atualiza o catálogo (itens novos já vêm com ele), a não ser que exista compra mais recente do produto.
+
 ## Como a sincronização funciona
 
 - Tudo fica gravado no celular primeiro; com internet, sobe para a nuvem em menos de 1 s.
@@ -63,6 +66,8 @@ Projeto gratuito: o Supabase pausa se ficar 7 dias sem nenhum uso. Abrindo o app
 
 ## Versões
 
+- **1.2** (24/10/2026) — arrastar para marcar/apagar; editar compras realizadas (preços em casa).
 - **1.1.1** (24/10/2026) — o botão "Enviar teste" diz se o celular não está cadastrado ou se o envio falhou.
+  - Função `nl-avisar` corrigida: removido o cabeçalho `topic` (a Apple devolvia 400 BadWebPushTopic). Já implantada no Supabase em 24/10/2026.
 - **1.1** (24/10/2026) — avisos no celular, "Estou no mercado" + modo mercado, código de barras, foto do item, orçamento do mês.
 - **1.0** (23/10/2026) — primeira versão, tema rosa (pedido da esposa; destaque #d63a72, no escuro #e8558a) e ícone rosa.

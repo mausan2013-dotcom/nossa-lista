@@ -125,8 +125,16 @@
     .grupo { margin-top: 14px; }
     .grupo h3 { font-size: 13px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 4px 6px; }
     .itens { overflow: hidden; }
-    .item { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); min-height: 56px; }
+    .item { position: relative; overflow: hidden; border-bottom: 1px solid var(--border); }
     .item:last-child { border-bottom: 0; }
+    .item .frente { position: relative; z-index: 1; display: flex; align-items: center; gap: 4px; min-height: 56px; background: var(--surface); touch-action: pan-y; will-change: transform; }
+    .item .frente.solto { transition: transform .22s cubic-bezier(.2,.8,.2,1); }
+    .item .fundo { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; gap: 8px; padding: 0 22px; color: #fff; font-weight: 650; font-size: 15px; white-space: nowrap; }
+    .item .fundo svg { width: 22px; height: 22px; }
+    .item .fundo.apagar { right: 0; left: 0; justify-content: flex-end; background: var(--danger); }
+    .item .fundo.marcar { right: 0; left: 0; justify-content: flex-start; background: var(--accent); }
+    .item .fundo.marcar.desfazer { background: var(--muted); }
+    .item .fundo.oculto-fundo { visibility: hidden; }
     .item .check { width: 52px; align-self: stretch; display: grid; place-items: center; flex: none; }
     .item .check span { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; transition: background .15s, border-color .15s; }
     .item .check svg { width: 15px; height: 15px; color: #fff; opacity: 0; }
@@ -137,8 +145,8 @@
     .item .det { font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
     .item .valor { padding: 0 14px 0 6px; font-size: 14px; color: var(--muted); white-space: nowrap; text-align: right; }
     .item.marcado .nome { text-decoration: line-through; color: var(--muted); }
-    .item.novo { animation: brilho 1.2s ease; }
-    @keyframes brilho { from { background: var(--accent-soft); } to { background: transparent; } }
+    .item.novo .frente { animation: brilho 1.2s ease; }
+    @keyframes brilho { from { background: var(--accent-soft); } to { background: var(--surface); } }
 
     .rodape {
       position: fixed; left: 0; right: 0; bottom: calc(var(--bottom) + 58px); z-index: 25; padding: 0 12px 8px;
@@ -207,8 +215,8 @@
       background: #2a1d23; color: #fff; padding: 11px 14px 11px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center;
       opacity: 0; transition: opacity .2s, transform .2s; max-width: calc(100% - 32px); font-size: 15px; pointer-events: none;
     }
-    .toast.visivel { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
-    .toast button { color: #ff9cc0; font-weight: 700; }
+    .toast.visivel { opacity: 1; transform: translate(-50%, 0); }
+    .toast button { color: #ff9cc0; font-weight: 700; pointer-events: auto; }  /* só o "Desfazer" recebe toque */
     body.com-rodape .toast { bottom: calc(var(--bottom) + 150px); }
 
     /* ---------- login ---------- */
@@ -236,7 +244,7 @@
     .item .foto { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; display: block; background: var(--surface-2); }
     .item .lapis { width: 44px; align-self: stretch; display: none; place-items: center; color: var(--muted); flex: none; }
     .item .lapis svg { width: 18px; height: 18px; }
-    body.modo-mercado .item { min-height: 66px; }
+    body.modo-mercado .item .frente { min-height: 66px; }
     body.modo-mercado .item .nome { font-size: 20px; }
     body.modo-mercado .item .det { font-size: 15px; }
     body.modo-mercado .item .check { width: 60px; }
@@ -254,6 +262,22 @@
     .leitor { position: relative; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 3 / 4; max-height: 56vh; margin: 0 auto; }
     .leitor video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .leitor .mira { position: absolute; left: 8%; right: 8%; top: 38%; height: 24%; border: 3px solid rgba(255,255,255,.9); border-radius: 12px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
+    /* editar compra feita (preços depois, em casa) */
+    .cp-linha { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .cp-linha:last-child { border-bottom: 0; }
+    .cp-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .cp-nome { font-weight: 600; overflow-wrap: anywhere; }
+    .cp-x { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); flex: none; }
+    .cp-x svg { width: 16px; height: 16px; }
+    .cp-campos { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .cp-campos input { padding: 9px 10px; text-align: center; min-width: 0; }
+    .cp-campos .cp-qtd { width: 72px; flex: none; }
+    .cp-campos .cp-preco { flex: 1; }
+    .cp-campos .cp-preco.falta { border-color: var(--accent); background: var(--accent-soft); }
+    .cp-campos .cp-un, .cp-campos .cp-mult { color: var(--muted); font-size: 14px; flex: none; }
+    .cp-campos .cp-val { min-width: 74px; text-align: right; font-weight: 600; font-size: 14.5px; flex: none; }
+    .cp-total { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 2px 4px; font-size: 17px; }
+    .cp-total small { color: var(--muted); font-size: 13px; }
     .adicionar .btn.lerc { padding: 0 12px; background: var(--surface); box-shadow: var(--shadow); color: var(--text); }
     .adicionar .btn.lerc svg { width: 24px; height: 24px; }
   </style>
@@ -270,7 +294,7 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.1.1';
+  const VERSAO = '1.2';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
@@ -321,6 +345,7 @@
     baixo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
     lapis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    lixo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>',
     carrinho: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 001.5 1.2h8.4a1.5 1.5 0 001.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>',
     codigo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke-width="1.8"/></svg>',
     abaListas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
@@ -493,11 +518,11 @@
     toast(`Compra guardada no histórico · ${moeda(total)}`);
   }
 
-  function repetirCompra(compraId, listaId) {
+  function repetirCompra(compraId, listaId, itensBase) {
     const c = D().compras[compraId];
     const na = itensDa(listaId);
     let n = 0;
-    for (const it of c.itens) {
+    for (const it of itensBase || c.itens) {
       const igual = na.find((i) => norm(i.nome) === norm(it.nome));
       if (igual && !igual.marcado) continue;
       if (igual) { Store.put('itens', Object.assign({}, igual, { marcado: false })); n++; continue; }
@@ -1083,12 +1108,16 @@
     const falta = its.filter((i) => !i.marcado), car = its.filter((i) => i.marcado);
     const linha = (i) => {
       const v = valorItem(i), det = detalheItem(i, true);
+      // por trás do item ficam as duas ações do gesto: arrastar p/ esquerda apaga, p/ direita marca (ou desmarca)
       return `<div class="item${i.marcado ? ' marcado' : ''}${destacar === i.id ? ' novo' : ''}" data-id="${esc(i.id)}">
+        <div class="fundo marcar${i.marcado ? ' desfazer' : ''} oculto-fundo">${ICONE.check}${i.marcado ? 'Desmarcar' : 'Marcar'}</div>
+        <div class="fundo apagar oculto-fundo">Apagar${ICONE.lixo}</div>
+        <div class="frente">
         <button class="check" data-marcar="${esc(i.id)}" aria-label="${i.marcado ? 'Desmarcar' : 'Marcar'} ${esc(i.nome)}"><span>${ICONE.check}</span></button>
         ${i.foto ? `<button class="ver-foto" data-verfoto="${esc(i.foto)}" data-titulo="${esc(i.nome)}" aria-label="Ver foto"><img class="foto" data-foto="${esc(i.foto)}" alt=""></button>` : ''}
         <button class="corpo" data-editar="${esc(i.id)}"><div class="nome">${esc(i.nome)}</div>${det ? `<div class="det">${esc(det)}</div>` : ''}</button>
         ${v != null ? `<div class="valor">${moeda(v)}</div>` : ''}
-        <button class="lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome)}">${ICONE.lapis}</button></div>`;
+        <button class="lapis" data-editar="${esc(i.id)}" aria-label="Editar ${esc(i.nome)}">${ICONE.lapis}</button></div></div>`;
     };
     let html = '';
     if (!its.length) html = `<div class="vazio"><div class="grande">🧺</div>Lista vazia.<br>Digite acima o que precisa comprar.</div>`;
@@ -1096,6 +1125,10 @@
     if (car.length) html += `<div class="grupo"><h3>No carrinho · ${car.length}</h3><div class="cartao itens">${car.sort((a, b) => a.nome.localeCompare(b.nome)).map(linha).join('')}</div></div>`;
     $('#conteudo').innerHTML = html;
     destacar = null;
+    if (its.length && !M().dicaArrastar) {  // dica única: o gesto não tem como ser descoberto sozinho
+      M().dicaArrastar = true; Store.salvar();
+      setTimeout(() => toast('Dica: arraste um item para a direita para marcar e para a esquerda para apagar'), 600);
+    }
 
     // rodapé com totais
     const tCar = car.reduce((s, i) => s + (valorItem(i) || 0), 0);
@@ -1158,7 +1191,7 @@
         <div class="mes"><span>${lista.length} ${lista.length === 1 ? 'compra' : 'compras'}</span><b>${moeda(tot)}</b></div>
         ${orcs ? `<div class="orc-hist">${orcs}</div>` : ''}
         ${lista.map((c) => `<button class="compra" data-compra="${esc(c.id)}"><span style="font-size:24px">${esc(c.emoji || '🛒')}</span>
-          <span class="info"><div>${esc(c.nomeLista)} · ${dataCurta(c.data)}</div><div class="det">${c.itens.length} ${c.itens.length === 1 ? 'item' : 'itens'}${c.por ? ' · ' + esc(c.por) : ''}</div></span>
+          <span class="info"><div>${esc(c.nomeLista)} · ${dataCurta(c.data)}</div><div class="det">${c.itens.length} ${c.itens.length === 1 ? 'item' : 'itens'}${c.por ? ' · ' + esc(c.por) : ''}${c.itens.some((i) => i.preco == null) ? ` · <span style="color:var(--accent-strong);font-weight:600">${c.itens.filter((i) => i.preco == null).length} sem preço</span>` : ''}</div></span>
           <span class="total">${moeda(c.total)}</span></button>`).join('')}</div>`;
     }
     return cabecalho('Histórico') + `<main>${html}</main>` + abas();
@@ -1401,19 +1434,91 @@
     });
   }
 
+  // Editar compra feita: dá para preencher/corrigir preços e quantidades em casa, tirar ou incluir itens e mudar a data.
+  // Tudo é feito numa cópia e só vale ao tocar em "Salvar alterações".
+  const precoTxt = (n) => (n == null ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 3 }));
+  const dataIso = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const totalItens = (its) => its.reduce((s, i) => s + (valorItem(i) || 0), 0);
+  // o preço do catálogo (usado nos itens novos) acompanha a compra mais recente do produto
+  function precosNoCatalogo(compraId, itens) {
+    const c = D().compras[compraId];
+    const maisNovas = ativos('compras').filter((x) => x.id !== compraId && x.data > c.data);
+    for (const i of itens) {
+      const id = norm(i.nome), cat = D().catalogo[id];
+      if (i.preco == null || !cat || cat.preco === i.preco) continue;
+      if (maisNovas.some((x) => x.itens.some((y) => norm(y.nome) === id))) continue;
+      Store.put('catalogo', Object.assign({}, cat, { preco: i.preco }));
+    }
+  }
   function abrirCompra(id) {
     const c = D().compras[id];
+    const itens = c.itens.map((i) => Object.assign({}, i));
     const destinos = listasOrdenadas();
     const destino = destinos.find((l) => l.id === c.lista) ? c.lista : (destinos[0] || {}).id;
+    const porUn = (un) => (un === 'g' ? 'kg' : un === 'ml' ? 'L' : un || 'un');
+    const valorTxt = (i) => { const v = valorItem(i); return v != null ? moeda(v) : '—'; };
     abrirFolha(`<h2>${esc(c.emoji || '')} ${esc(c.nomeLista)} · ${new Date(c.data).toLocaleDateString('pt-BR')}</h2>
-      <ul class="lista-simples">${c.itens.map((i) => { const v = valorItem(i); return `<li><span>${esc(i.nome)}${i.qtd != null ? ` <small style="color:var(--muted)">${fmtNum(i.qtd)} ${esc(i.un)}</small>` : ''}</span><span>${v != null ? moeda(v) : '—'}</span></li>`; }).join('')}
-        <li><b>Total</b><b>${moeda(c.total)}</b></li></ul>
-      ${c.por ? `<p style="color:var(--muted);font-size:13px">Finalizada por ${esc(c.por)}</p>` : ''}
-      ${destino ? `<div class="campo"><label>Colocar estes itens de novo na lista</label><select id="fc-lista">${destinos.map((l) => `<option value="${esc(l.id)}" ${l.id === destino ? 'selected' : ''}>${esc(l.emoji || '')} ${esc(l.nome)}</option>`).join('')}</select></div>` : ''}
-      <div class="botoes"><button class="btn perigo" data-f="apagar">Excluir</button>${destino ? '<button class="btn primario" data-f="repetir">Repetir compra</button>' : ''}</div>`, (f) => {
+      <p style="color:var(--muted);margin:-6px 0 10px;font-size:14.5px">Preencha ou corrija os preços (o preço é por unidade, kg ou litro, como na etiqueta).</p>
+      <div class="campo"><label>Data da compra</label><input type="date" id="fc-data" value="${dataIso(c.data)}"></div>
+      <div id="fc-itens"></div>
+      <div class="cp-total" id="fc-total"></div>
+      <form id="fc-add" style="display:flex;gap:8px;margin-top:6px" autocomplete="off"><input id="fc-novo" placeholder="Esqueceu um item? Ex.: 2 kg tomate" autocapitalize="sentences"><button class="btn" style="flex:none">Incluir</button></form>
+      ${c.por ? `<p style="color:var(--muted);font-size:13px;margin:10px 2px 0">Finalizada por ${esc(c.por)}${c.editadaPor ? ` · editada por ${esc(c.editadaPor)}` : ''}</p>` : ''}
+      <div class="botoes"><button class="btn primario" data-f="salvar">Salvar alterações</button></div>
+      ${destino ? `<div class="campo" style="margin-top:18px"><label>Colocar estes itens de novo numa lista</label><div style="display:flex;gap:8px"><select id="fc-lista">${destinos.map((l) => `<option value="${esc(l.id)}" ${l.id === destino ? 'selected' : ''}>${esc(l.emoji || '')} ${esc(l.nome)}</option>`).join('')}</select><button type="button" class="btn" style="flex:none" data-f="repetir">Repetir</button></div></div>` : ''}
+      <div class="botoes"><button class="btn perigo" data-f="apagar">Excluir esta compra</button></div>`, (f) => {
+      const totais = () => {
+        const sem = itens.filter((i) => i.preco == null).length;
+        $('#fc-total', f).innerHTML = `<span>Total${sem ? ` <small>· ${sem} sem preço</small>` : ''}</span><b>${moeda(totalItens(itens))}</b>`;
+      };
+      const desenhar = () => {
+        $('#fc-itens', f).innerHTML = itens.map((i, k) => `<div class="cp-linha"><div class="cp-topo"><span class="cp-nome">${esc(i.nome)}</span>
+          <button type="button" class="cp-x" data-rm="${k}" aria-label="Tirar ${esc(i.nome)} da compra">${ICONE.x}</button></div>
+          <div class="cp-campos"><input class="cp-qtd" data-k="${k}" data-c="qtd" inputmode="decimal" placeholder="1" value="${esc(fmtNum(i.qtd))}"><span class="cp-un">${esc(i.un || 'un')}</span><span class="cp-mult">×</span>
+          <input class="cp-preco${i.preco == null ? ' falta' : ''}" data-k="${k}" data-c="preco" inputmode="decimal" placeholder="R$ por ${esc(porUn(i.un))}" value="${esc(precoTxt(i.preco))}">
+          <span class="cp-val" data-val="${k}">${valorTxt(i)}</span></div></div>`).join('');
+        totais();
+      };
+      desenhar();
+      f.addEventListener('input', (e) => {
+        const t = e.target;
+        if (!t.dataset || t.dataset.k == null) return;
+        const i = itens[+t.dataset.k];
+        i[t.dataset.c] = t.dataset.c === 'qtd' ? numero(t.value) || null : numero(t.value);
+        $(`[data-val="${t.dataset.k}"]`, f).textContent = valorTxt(i);
+        if (t.dataset.c === 'preco') t.classList.toggle('falta', i.preco == null);
+        totais();
+      });
+      f.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-rm]');
+        if (b) { itens.splice(+b.dataset.rm, 1); desenhar(); }
+      });
+      $('#fc-add', f).onsubmit = (e) => {
+        e.preventDefault();
+        const lido = lerTextoItem($('#fc-novo', f).value);
+        if (!lido.nome) return;
+        const nome = capitalizar(lido.nome), cat = D().catalogo[norm(nome)];
+        itens.push({ nome: cat ? cat.nome : nome, cat: palpiteCategoria(nome), qtd: lido.qtd != null ? lido.qtd : null, un: lido.un || (cat && cat.un) || 'un', preco: cat && cat.preco != null ? cat.preco : null, obs: '' });
+        $('#fc-novo', f).value = '';
+        desenhar();
+      };
+      $('[data-f=salvar]', f).onclick = () => {
+        if (!itens.length) return toast('A compra precisa ter ao menos um item. Para tirar tudo, use Excluir.');
+        const total = totalItens(itens);
+        let data = c.data;
+        const novaData = $('#fc-data', f).value;
+        if (novaData && novaData !== dataIso(c.data)) {  // muda o dia e mantém a hora
+          const [y, m, d] = novaData.split('-').map(Number), h = new Date(c.data);
+          data = new Date(y, m - 1, d, h.getHours(), h.getMinutes()).getTime();
+        }
+        Store.put('compras', Object.assign({}, c, { itens, total, data, editada: Date.now(), editadaPor: meuNome() }));
+        precosNoCatalogo(id, itens);
+        Store.concluir(); fecharFolha(); render();
+        toast(`Compra atualizada · ${moeda(total)}`);
+      };
       $('[data-f=apagar]', f).onclick = () => confirmar('Excluir do histórico?', 'Esta compra some do histórico nos dois celulares.', 'Excluir', () => { Store.put('compras', Object.assign({}, c, { apagado: true })); Store.concluir(); render(); });
       const r = $('[data-f=repetir]', f);
-      if (r) r.onclick = () => { const lid = $('#fc-lista', f).value; const n = repetirCompra(id, lid); fecharFolha(); toast(n ? `${n} ${n === 1 ? 'item adicionado' : 'itens adicionados'}` : 'Todos já estavam na lista'); ir('lista', lid); };
+      if (r) r.onclick = () => { const lid = $('#fc-lista', f).value; const n = repetirCompra(id, lid, itens); fecharFolha(); toast(n ? `${n} ${n === 1 ? 'item adicionado' : 'itens adicionados'}` : 'Todos já estavam na lista'); ir('lista', lid); };
     });
   }
 
@@ -1463,6 +1568,53 @@
     };
     r.readAsText(arquivo);
   }
+
+  /* ---------- arrastar o item: direita marca/desmarca, esquerda apaga ----------
+     O item tem touch-action: pan-y, então a rolagem vertical segue normal e só o gesto horizontal chega aqui.
+     Apagar tem "Desfazer" (apagarItem). Começar colado na borda esquerda é o gesto de voltar do iPhone: ignora. */
+  let bloqueioClique = 0;
+  document.addEventListener('click', (e) => { if (Date.now() < bloqueioClique) { e.stopPropagation(); e.preventDefault(); } }, true);
+  (() => {
+    const LIMITE = 84;
+    let g = null;
+    document.addEventListener('pointerdown', (e) => {
+      const frente = e.target.closest('.item .frente');
+      if (!frente || (e.pointerType === 'mouse' && e.button !== 0) || e.clientX < 24) return;
+      g = { frente, item: frente.parentElement, id: frente.parentElement.dataset.id, x: e.clientX, y: e.clientY, ponteiro: e.pointerId, horizontal: false, dx: 0 };
+    });
+    document.addEventListener('pointermove', (e) => {
+      if (!g || e.pointerId !== g.ponteiro) return;
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if (!g.horizontal) {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { g = null; return; }  // é rolagem
+        if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        g.horizontal = true;
+        g.frente.classList.remove('solto');
+        try { g.frente.setPointerCapture(e.pointerId); } catch (x) { /* segue sem captura */ }
+      }
+      g.dx = dx;
+      g.frente.style.transform = `translateX(${dx}px)`;
+      $('.fundo.marcar', g.item).classList.toggle('oculto-fundo', dx <= 0);
+      $('.fundo.apagar', g.item).classList.toggle('oculto-fundo', dx >= 0);
+    });
+    const soltar = (e) => {
+      if (!g || e.pointerId !== g.ponteiro) return;
+      const { frente, id, dx, horizontal } = g;
+      g = null;
+      if (!horizontal) return;
+      bloqueioClique = Date.now() + 350;  // o toque que termina o arrasto não pode abrir a edição
+      frente.classList.add('solto');
+      if (e.type === 'pointerup' && dx <= -LIMITE) {
+        frente.style.transform = 'translateX(-105%)';
+        setTimeout(() => apagarItem(id), 170);
+      } else if (e.type === 'pointerup' && dx >= LIMITE) {
+        frente.style.transform = '';
+        alternarItem(id);
+      } else frente.style.transform = '';
+    };
+    document.addEventListener('pointerup', soltar);
+    document.addEventListener('pointercancel', soltar);
+  })();
 
   /* ---------- eventos ---------- */
   document.addEventListener('click', (e) => {
