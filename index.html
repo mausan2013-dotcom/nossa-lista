@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Nossa Lista</title>
+  <meta name="description" content="Lista de compras do casal, sincronizada entre os dois celulares.">
+  <meta name="theme-color" content="#fbf4f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161013" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nossa Lista">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root {
+      --bg: #fbf4f7;
+      --surface: #ffffff;
+      --surface-2: #f6e9ef;
+      --border: #eedbe3;
+      --text: #2a1d23;
+      --muted: #7c6871;
+      --accent: #d63a72;
+      --accent-strong: #b82c5f;
+      --accent-soft: #fde3ed;
+      --danger: #d64545;
+      --warn: #d98b1c;
+      --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+      --radius: 14px;
+      --top: env(safe-area-inset-top, 0px);
+      --bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #161013;
+        --surface: #221a1e;
+        --surface-2: #2e2328;
+        --border: #3b2e34;
+        --text: #f5eef1;
+        --muted: #a8949d;
+        --accent: #e8558a;
+        --accent-strong: #f27aa5;
+        --accent-soft: #3d1f2c;
+        --shadow: none;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); }
+    body {
+      font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh; overscroll-behavior-y: none;
+    }
+    button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+    input, select, textarea {
+      font: inherit; font-size: 16px; color: var(--text); background: var(--surface-2);
+      border: 1px solid transparent; border-radius: 10px; padding: 11px 12px; width: 100%; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); background: var(--surface); }
+    select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+    .oculto { display: none !important; }
+
+    /* ---------- estrutura ---------- */
+    header.topo {
+      position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      padding: calc(var(--top) + 10px) 16px 10px; display: flex; align-items: center; gap: 10px;
+    }
+    header.topo h1 { font-size: 26px; font-weight: 750; margin: 0; flex: 1; letter-spacing: -.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header.topo.sub h1 { font-size: 20px; }
+    .btn-icone { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); box-shadow: var(--shadow); flex: none; }
+    .btn-icone svg { width: 20px; height: 20px; }
+    .estado { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+    .estado.ok { background: var(--accent); }
+    .estado.pendente { background: var(--warn); }
+    .estado.erro { background: var(--danger); }
+    main { padding: 4px 16px calc(var(--bottom) + 96px); max-width: 640px; margin: 0 auto; }
+    body.com-rodape main { padding-bottom: calc(var(--bottom) + 170px); }
+
+    nav.abas {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; justify-content: space-around;
+      background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border); padding: 6px 8px calc(var(--bottom) + 6px);
+    }
+    nav.abas button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--muted); padding: 4px 0; }
+    nav.abas button svg { width: 24px; height: 24px; }
+    nav.abas button.ativa { color: var(--accent); font-weight: 600; }
+
+    .cartao { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .titulo-secao { font-size: 13px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 22px 4px 8px; display: flex; justify-content: space-between; align-items: center; }
+    .vazio { text-align: center; color: var(--muted); padding: 40px 20px; }
+    .vazio .grande { font-size: 44px; margin-bottom: 6px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 16px; border-radius: 12px; font-weight: 600; background: var(--surface-2); }
+    .btn.primario { background: var(--accent); color: #fff; }
+    .btn.perigo { color: var(--danger); }
+    .btn.largo { width: 100%; }
+    .btn:disabled { opacity: .45; }
+
+    /* ---------- listas ---------- */
+    .listas { display: grid; gap: 10px; }
+    .lista-card { display: flex; align-items: center; gap: 14px; padding: 14px; text-align: left; width: 100%; }
+    .lista-card .emoji { font-size: 28px; width: 48px; height: 48px; border-radius: 12px; background: var(--accent-soft); display: grid; place-items: center; flex: none; }
+    .lista-card .info { flex: 1; min-width: 0; }
+    .lista-card .nome { font-weight: 650; font-size: 17px; }
+    .lista-card .det { color: var(--muted); font-size: 14px; }
+    .lista-card .seta { color: var(--muted); }
+
+    /* ---------- lista aberta ---------- */
+    .adicionar { position: sticky; top: calc(var(--top) + 58px); z-index: 15; padding: 2px 0 8px; background: var(--bg); }
+    .adicionar form { display: flex; gap: 8px; }
+    .adicionar input { background: var(--surface); box-shadow: var(--shadow); border-radius: 12px; padding: 13px 14px; }
+    .adicionar .btn { padding: 0 16px; border-radius: 12px; }
+    .sugestoes { position: absolute; left: 0; right: 0; top: 56px; background: var(--surface); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.15); overflow: hidden; z-index: 16; }
+    .sugestoes button { display: flex; width: 100%; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .sugestoes button:last-child { border-bottom: 0; }
+    .sugestoes small { color: var(--muted); }
+    .chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; padding: 7px 12px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); font-size: 14px; white-space: nowrap; }
+    .chip b { color: var(--accent); font-weight: 700; margin-right: 2px; }
+
+    .grupo { margin-top: 14px; }
+    .grupo h3 { font-size: 13px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin: 0 4px 6px; }
+    .itens { overflow: hidden; }
+    .item { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--border); min-height: 56px; }
+    .item:last-child { border-bottom: 0; }
+    .item .check { width: 52px; align-self: stretch; display: grid; place-items: center; flex: none; }
+    .item .check span { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); display: grid; place-items: center; transition: background .15s, border-color .15s; }
+    .item .check svg { width: 15px; height: 15px; color: #fff; opacity: 0; }
+    .item.marcado .check span { background: var(--accent); border-color: var(--accent); }
+    .item.marcado .check svg { opacity: 1; }
+    .item .corpo { flex: 1; min-width: 0; padding: 9px 0; text-align: left; }
+    .item .nome { font-weight: 550; overflow-wrap: anywhere; }
+    .item .det { font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
+    .item .valor { padding: 0 14px 0 6px; font-size: 14px; color: var(--muted); white-space: nowrap; text-align: right; }
+    .item.marcado .nome { text-decoration: line-through; color: var(--muted); }
+    .item.novo { animation: brilho 1.2s ease; }
+    @keyframes brilho { from { background: var(--accent-soft); } to { background: transparent; } }
+
+    .rodape {
+      position: fixed; left: 0; right: 0; bottom: calc(var(--bottom) + 58px); z-index: 25; padding: 0 12px 8px;
+    }
+    .rodape .cartao { max-width: 616px; margin: 0 auto; padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.12); }
+    .rodape .totais { flex: 1; min-width: 0; }
+    .rodape .totais b { font-size: 19px; display: block; }
+    .rodape .totais small { color: var(--muted); font-size: 13px; }
+
+    /* ---------- histórico ---------- */
+    .mes { padding: 14px 16px; display: flex; justify-content: space-between; align-items: baseline; }
+    .mes b { font-size: 20px; }
+    .compra { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--border); width: 100%; text-align: left; }
+    .compra:last-child { border-bottom: 0; }
+    .compra .info { flex: 1; min-width: 0; }
+    .compra .det { font-size: 13.5px; color: var(--muted); }
+    .compra .total { font-weight: 650; }
+
+    /* ---------- ajustes ---------- */
+    .linha { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--border); }
+    .linha:last-child { border-bottom: 0; }
+    .linha .rot { flex: 1; min-width: 0; }
+    .linha .rot small { display: block; color: var(--muted); font-size: 13px; }
+    .linha .acoes { display: flex; gap: 4px; }
+    .linha .acoes button { width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; }
+    .linha .acoes button svg { width: 16px; height: 16px; }
+    .chave { position: relative; width: 50px; height: 30px; flex: none; }
+    .chave input { position: absolute; opacity: 0; inset: 0; margin: 0; width: 100%; height: 100%; z-index: 1; }
+    .chave span { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background .2s; }
+    .chave span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+    .chave input:checked + span { background: var(--accent); }
+    .chave input:checked + span::after { transform: translateX(20px); }
+
+    /* ---------- folha (bottom sheet) ---------- */
+    .veu { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; opacity: 0; transition: opacity .2s; }
+    .veu.aberto { opacity: 1; }
+    .folha {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 51; background: var(--surface); border-radius: 20px 20px 0 0;
+      padding: 8px 16px calc(var(--bottom) + 16px); max-height: 90vh; overflow-y: auto;
+      transform: translateY(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); max-width: 640px; margin: 0 auto;
+    }
+    .folha.aberta { transform: none; }
+    .folha .puxador { width: 40px; height: 5px; border-radius: 3px; background: var(--border); margin: 0 auto 10px; }
+    .folha h2 { font-size: 20px; margin: 4px 0 14px; }
+    .campo { margin-bottom: 12px; }
+    .campo label { display: block; font-size: 13px; color: var(--muted); margin: 0 2px 5px; font-weight: 600; }
+    .dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .qtd { display: flex; gap: 6px; }
+    .qtd button { width: 44px; flex: none; border-radius: 10px; background: var(--surface-2); font-size: 22px; font-weight: 600; }
+    .qtd input { text-align: center; }
+    .botoes { display: flex; gap: 10px; margin-top: 16px; }
+    .botoes .btn { flex: 1; }
+    .emojis { display: flex; flex-wrap: wrap; gap: 6px; }
+    .emojis button { width: 44px; height: 44px; border-radius: 10px; background: var(--surface-2); font-size: 22px; }
+    .emojis button.sel { outline: 2px solid var(--accent); background: var(--accent-soft); }
+    .lista-simples { margin: 0 0 6px; padding: 0; list-style: none; }
+    .lista-simples li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--border); }
+    .lista-simples li span:last-child { color: var(--muted); white-space: nowrap; }
+    .menu button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 4px; border-bottom: 1px solid var(--border); text-align: left; font-size: 17px; }
+    .menu button:last-child { border-bottom: 0; }
+    .menu button.perigo { color: var(--danger); }
+
+    /* ---------- toast ---------- */
+    .toast {
+      position: fixed; left: 50%; bottom: calc(var(--bottom) + 80px); transform: translate(-50%, 20px); z-index: 60;
+      background: #2a1d23; color: #fff; padding: 11px 14px 11px 16px; border-radius: 12px; display: flex; gap: 14px; align-items: center;
+      opacity: 0; transition: opacity .2s, transform .2s; max-width: calc(100% - 32px); font-size: 15px; pointer-events: none;
+    }
+    .toast.visivel { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+    .toast button { color: #ff9cc0; font-weight: 700; }
+    body.com-rodape .toast { bottom: calc(var(--bottom) + 150px); }
+
+    /* ---------- login ---------- */
+    .login { max-width: 380px; margin: 0 auto; padding: calc(var(--top) + 60px) 24px 40px; text-align: center; }
+    .login img { width: 84px; height: 84px; border-radius: 20px; }
+    .login h1 { margin: 14px 0 4px; }
+    .login p { color: var(--muted); margin: 0 0 24px; }
+    .login form { display: grid; gap: 10px; text-align: left; }
+    .login .erro { color: var(--danger); font-size: 14px; min-height: 20px; }
+    .login .link { color: var(--accent); margin-top: 18px; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast" class="toast"><span></span><button class="oculto"></button></div>
+
+  <script>
+  'use strict';
+  /* =====================================================================
+     Nossa Lista — lista de compras do casal (PWA para iPhone)
+     Dados: gravados no aparelho (funciona sem sinal) e sincronizados pela nuvem Supabase.
+     Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
+     Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
+     ===================================================================== */
+  const VERSAO = '1.0';
+
+  // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
+  const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
+  const SUPA_KEY = 'sb_publishable_3q-hGxBzH9c5-CCWt235ng_56AtaAbh';  // chave pública (segura com as regras de acesso)
+
+  const CATS_PADRAO = ['Hortifruti', 'Padaria', 'Açougue e peixaria', 'Frios e laticínios', 'Mercearia', 'Bebidas',
+    'Congelados', 'Limpeza', 'Higiene e beleza', 'Bebê', 'Pet', 'Farmácia', 'Casa e utilidades', 'Outros'];
+  const UNIDADES = ['un', 'kg', 'g', 'L', 'ml', 'pct', 'cx', 'dz', 'lata', 'garrafa'];
+  const EMOJIS = ['🛒', '💊', '🏠', '🥩', '🥖', '🍎', '🧴', '🐶', '👶', '🎉', '🍷', '🧹', '🔧', '🎁', '📦', '❄️'];
+  const COLECOES = ['listas', 'itens', 'compras', 'catalogo', 'config'];
+
+  // Palpite de categoria pelo nome (só quando o item nunca foi comprado antes)
+  const PALPITES = {
+    'Hortifruti': 'alface tomate cebola alho batata cenoura banana maca maçã laranja limao limão mamao mamão abacate abacaxi melancia melao melão uva morango pera manga kiwi brocolis brócolis couve repolho pepino abobrinha abobora abóbora berinjela pimentao pimentão beterraba mandioca aipim inhame chuchu quiabo vagem salsinha cebolinha coentro hortela hortelã rucula rúcula espinafre gengibre ovos ovo verdura legume fruta',
+    'Padaria': 'pao pão paes pães bisnaguinha bolo torrada broa croissant baguete rosca sonho',
+    'Açougue e peixaria': 'carne frango peito coxa sobrecoxa asa file filé alcatra picanha patinho acem acém costela linguica linguiça bacon peixe tilapia tilápia salmao salmão camarao camarão moida moída bife lombo pernil calabresa hamburguer hambúrguer',
+    'Frios e laticínios': 'leite queijo presunto mussarela muçarela mortadela peito-de-peru iogurte manteiga margarina requeijao requeijão creme nata coalhada salame ricota cottage',
+    'Mercearia': 'arroz feijao feijão macarrao macarrão oleo óleo azeite acucar açúcar sal cafe café farinha fuba fubá aveia granola biscoito bolacha molho extrato milho ervilha atum sardinha maionese ketchup mostarda vinagre tempero caldo achocolatado cereal gelatina leite-condensado chocolate pipoca amendoim castanha mel geleia',
+    'Bebidas': 'agua água refrigerante coca suco cerveja vinho energetico energético cha chá guarana guaraná isotonico isotônico vodka whisky',
+    'Congelados': 'sorvete pizza lasanha nuggets congelado gelo polpa batata-frita',
+    'Limpeza': 'detergente sabao sabão amaciante desinfetante agua-sanitaria água-sanitária cloro esponja vassoura rodo pano saco-de-lixo lixo alcool álcool limpador multiuso lustra-moveis veja',
+    'Higiene e beleza': 'papel-higienico papel-higiênico sabonete shampoo xampu condicionador creme-dental pasta-de-dente escova desodorante absorvente fio-dental cotonete algodao algodão barbeador lamina lâmina hidratante protetor',
+    'Bebê': 'fralda lenco lenço pomada mamadeira papinha',
+    'Pet': 'racao ração areia petisco',
+    'Farmácia': 'remedio remédio dipirona paracetamol vitamina curativo band-aid termometro termômetro soro'
+  };
+
+  /* ---------- utilidades ---------- */
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const moeda = (n) => (n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const numero = (s) => { if (s == null || s === '') return null; const n = parseFloat(String(s).replace(/\./g, (m, i, t) => (t.includes(',') ? '' : m)).replace(',', '.')); return isFinite(n) ? n : null; };
+  const fmtNum = (n) => (n == null ? '' : n.toLocaleString('pt-BR', { maximumFractionDigits: 3 }));
+  const dataCurta = (ms) => new Date(ms).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+  const nomeMes = (ms) => { const t = new Date(ms).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); return t[0].toUpperCase() + t.slice(1); };
+
+  const ICONE = {
+    voltar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    mais: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    menu: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    cima: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+    baixo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    lapis: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    abaListas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
+    abaHist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    abaAjustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>'
+  };
+
+  /* ---------- dados (no aparelho) ---------- */
+  const CHAVE = 'nossalista_v1';
+  const Store = {
+    dados: null, meta: null,
+    vazio() { return { listas: {}, itens: {}, compras: {}, catalogo: {}, config: {} }; },
+    carregar() {
+      let salvo = null;
+      try { salvo = JSON.parse(localStorage.getItem(CHAVE)); } catch (e) {}
+      this.dados = Object.assign(this.vazio(), salvo && salvo.dados);
+      this.meta = Object.assign({ nome: '', enviado: {}, cursor: null, pedirPreco: false, aberto: {} }, salvo && salvo.meta);
+      // listas iniciais com id fixo: os dois celulares criam o mesmo registro, sem duplicar
+      if (!this.dados.listas.mercado) this.dados.listas.mercado = { id: 'mercado', nome: 'Mercado', emoji: '🛒', ordem: 1, atualizado: 0 };
+      if (!this.dados.listas.farmacia) this.dados.listas.farmacia = { id: 'farmacia', nome: 'Farmácia', emoji: '💊', ordem: 2, atualizado: 0 };
+      if (!this.dados.config.cats) this.dados.config.cats = { id: 'cats', lista: CATS_PADRAO.slice(), atualizado: 0 };
+    },
+    salvar() {
+      try { localStorage.setItem(CHAVE, JSON.stringify({ dados: this.dados, meta: this.meta })); }
+      catch (e) { toast('Não foi possível gravar no aparelho'); }
+    },
+    // grava sempre um objeto novo (a sincronização compara pela hora "atualizado")
+    put(col, obj) {
+      const novo = Object.assign({}, obj, { atualizado: Math.max(Date.now(), (obj.atualizado || 0) + 1) });
+      this.dados[col][novo.id] = novo;
+      return novo;
+    },
+    concluir() { this.salvar(); Nuvem.agendar(); }
+  };
+  const D = () => Store.dados;
+  const M = () => Store.meta;
+  const ativos = (col) => Object.values(D()[col]).filter((x) => !x.apagado);
+  const cats = () => D().config.cats.lista;
+  const listasOrdenadas = () => ativos('listas').sort((a, b) => (a.ordem || 0) - (b.ordem || 0) || a.nome.localeCompare(b.nome));
+  const itensDa = (lista) => ativos('itens').filter((i) => i.lista === lista);
+  const meuNome = () => M().nome || (Nuvem.sessao && Nuvem.sessao.email ? Nuvem.sessao.email.split('@')[0] : '');
+
+  function palpiteCategoria(nome) {
+    const n = norm(nome);
+    const cat = D().catalogo[n];
+    if (cat && cat.cat) return cat.cat;
+    const palavras = n.split(' ');
+    // primeiro as expressões compostas ("leite condensado", "agua sanitaria"), depois as palavras soltas
+    for (const composta of [true, false]) {
+      for (const [c, lista] of Object.entries(PALPITES)) {
+        for (const k of norm(lista).split(' ')) {
+          if (k.includes('-') !== composta) continue;
+          const achou = composta ? n.includes(k.replace(/-/g, ' ')) : palavras.includes(k) || palavras.includes(k + 's');
+          if (achou) return cats().includes(c) ? c : 'Outros';
+        }
+      }
+    }
+    return 'Outros';
+  }
+
+  // Preço: em kg/L o preço é por kg/L; em g/ml também é por kg/L (convertido); nos outros, por unidade
+  function rotuloPreco(un) { return un === 'g' || un === 'kg' ? 'Preço por kg' : un === 'ml' || un === 'L' ? 'Preço por litro' : 'Preço por ' + (un || 'un'); }
+  function valorItem(i) {
+    if (i.preco == null) return null;
+    const q = i.qtd == null ? 1 : i.qtd;
+    return i.un === 'g' || i.un === 'ml' ? (q / 1000) * i.preco : q * i.preco;
+  }
+  function detalheItem(i, comPor) {
+    const partes = [];
+    if (i.qtd != null) partes.push(fmtNum(i.qtd) + ' ' + (i.un || 'un'));
+    if (i.obs) partes.push(i.obs);
+    if (i.preco != null && (i.qtd != null && i.qtd !== 1 || i.un === 'g' || i.un === 'ml')) partes.push(moeda(i.preco) + '/' + (i.un === 'g' ? 'kg' : i.un === 'ml' ? 'L' : i.un || 'un'));
+    if (comPor && i.por && i.por !== meuNome()) partes.push('por ' + i.por);
+    return partes.join(' · ');
+  }
+
+  /* ---------- catálogo (histórico de produtos, para sugestões) ---------- */
+  function lembrarProduto(item, comprou) {
+    const id = norm(item.nome);
+    if (!id) return;
+    const atual = D().catalogo[id] || { id, nome: item.nome, vezes: 0, porLista: {} };
+    const novo = Object.assign({}, atual, { nome: item.nome, cat: item.cat, un: item.un || atual.un });
+    if (item.preco != null) novo.preco = item.preco;
+    if (item.qtd != null) novo.qtd = item.qtd;
+    if (comprou) {
+      novo.vezes = (atual.vezes || 0) + 1;
+      novo.porLista = Object.assign({}, atual.porLista, { [item.lista]: ((atual.porLista || {})[item.lista] || 0) + 1 });
+      novo.ultima = Date.now();
+    }
+    Store.put('catalogo', novo);
+  }
+
+  /* ---------- ações ---------- */
+  function lerTextoItem(texto) {
+    // "2 kg arroz", "3 leite", "arroz"
+    const m = texto.trim().match(/^(\d+(?:[.,]\d+)?)\s*(kg|g|l|ml|un|pct|cx|dz|lata|latas|garrafa|garrafas)?\s+(.+)$/i);
+    if (!m) return { nome: texto.trim() };
+    let un = m[2] ? m[2].toLowerCase() : null;
+    if (un === 'l') un = 'L';
+    if (un === 'latas') un = 'lata';
+    if (un === 'garrafas') un = 'garrafa';
+    return { nome: m[3].trim(), qtd: numero(m[1]), un };
+  }
+  function capitalizar(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+
+  function adicionarItem(listaId, texto) {
+    const lido = lerTextoItem(texto);
+    if (!lido.nome) return;
+    const nome = capitalizar(lido.nome);
+    const igual = itensDa(listaId).find((i) => norm(i.nome) === norm(nome));
+    if (igual && !igual.marcado) {
+      if (lido.qtd != null) { Store.put('itens', Object.assign({}, igual, { qtd: lido.qtd, un: lido.un || igual.un })); Store.concluir(); }
+      destacar = igual.id; render(); toast(`${igual.nome} já está na lista`); return;
+    }
+    if (igual && igual.marcado) {
+      Store.put('itens', Object.assign({}, igual, { marcado: false, qtd: lido.qtd != null ? lido.qtd : igual.qtd }));
+      Store.concluir(); destacar = igual.id; render(); return;
+    }
+    const cat = D().catalogo[norm(nome)];
+    const item = {
+      id: uid(), lista: listaId, nome: cat ? cat.nome : nome, cat: palpiteCategoria(nome),
+      qtd: lido.qtd != null ? lido.qtd : null, un: lido.un || (cat && cat.un) || 'un',
+      obs: '', preco: cat && cat.preco != null ? cat.preco : null, marcado: false, por: meuNome(), criado: Date.now()
+    };
+    Store.put('itens', item);
+    lembrarProduto(item, false);
+    Store.concluir();
+    destacar = item.id;
+    render();
+  }
+
+  function alternarItem(id) {
+    const i = D().itens[id];
+    if (!i) return;
+    const marcado = !i.marcado;
+    Store.put('itens', Object.assign({}, i, { marcado, marcadoPor: marcado ? meuNome() : '' }));
+    Store.concluir();
+    render();
+    if (marcado && M().pedirPreco) abrirPreco(id);
+  }
+
+  function apagarItem(id) {
+    const antes = D().itens[id];
+    Store.put('itens', Object.assign({}, antes, { apagado: true }));
+    Store.concluir();
+    render();
+    toast(`${antes.nome} removido`, 'Desfazer', () => { Store.put('itens', Object.assign({}, D().itens[id], { apagado: false })); Store.concluir(); render(); });
+  }
+
+  function finalizarCompra(listaId) {
+    const lista = D().listas[listaId];
+    const marcados = itensDa(listaId).filter((i) => i.marcado);
+    if (!marcados.length) return;
+    const total = marcados.reduce((s, i) => s + (valorItem(i) || 0), 0);
+    const compra = {
+      id: uid(), lista: listaId, nomeLista: lista.nome, emoji: lista.emoji, data: Date.now(), por: meuNome(), total,
+      itens: marcados.map((i) => ({ nome: i.nome, cat: i.cat, qtd: i.qtd, un: i.un, preco: i.preco, obs: i.obs }))
+    };
+    Store.put('compras', compra);
+    for (const i of marcados) { lembrarProduto(i, true); Store.put('itens', Object.assign({}, i, { apagado: true })); }
+    Store.concluir();
+    render();
+    toast(`Compra guardada no histórico · ${moeda(total)}`);
+  }
+
+  function repetirCompra(compraId, listaId) {
+    const c = D().compras[compraId];
+    const na = itensDa(listaId);
+    let n = 0;
+    for (const it of c.itens) {
+      const igual = na.find((i) => norm(i.nome) === norm(it.nome));
+      if (igual && !igual.marcado) continue;
+      if (igual) { Store.put('itens', Object.assign({}, igual, { marcado: false })); n++; continue; }
+      Store.put('itens', { id: uid(), lista: listaId, nome: it.nome, cat: cats().includes(it.cat) ? it.cat : palpiteCategoria(it.nome), qtd: it.qtd, un: it.un || 'un', obs: it.obs || '', preco: it.preco, marcado: false, por: meuNome(), criado: Date.now() });
+      n++;
+    }
+    Store.concluir();
+    return n;
+  }
+
+  function textoDaLista(listaId) {
+    const lista = D().listas[listaId];
+    const itens = itensDa(listaId).filter((i) => !i.marcado);
+    let t = `${lista.emoji || ''} ${lista.nome}\n`;
+    for (const c of ordemCats(itens)) {
+      t += `\n*${c}*\n`;
+      for (const i of itens.filter((x) => x.cat === c)) t += `• ${i.nome}${i.qtd != null ? ' — ' + fmtNum(i.qtd) + ' ' + i.un : ''}${i.obs ? ' (' + i.obs + ')' : ''}\n`;
+    }
+    return t.trim();
+  }
+  function ordemCats(itens) {
+    const usadas = [...new Set(itens.map((i) => i.cat || 'Outros'))];
+    const ordem = cats();
+    return usadas.sort((a, b) => (ordem.indexOf(a) + 1 || 999) - (ordem.indexOf(b) + 1 || 999) || a.localeCompare(b));
+  }
+
+  /* ---------- nuvem (Supabase) ---------- */
+  const Nuvem = {
+    sessao: null, rodando: false, deNovo: false, timer: null, estado: 'local', erro: '', membroOk: false,
+    configurada() { return !!SUPA_URL && !!SUPA_KEY; },
+    ativa() { return this.configurada() && !!this.sessao && !this.sessao.expirada; },
+    carregar() { try { this.sessao = JSON.parse(localStorage.getItem('nossalista_sessao')); } catch (e) { this.sessao = null; } },
+    guardar() { try { localStorage.setItem('nossalista_sessao', JSON.stringify(this.sessao)); } catch (e) {} },
+    precisaLogin() {
+      if (!this.configurada()) return false;
+      let local = false;
+      try { local = localStorage.getItem('nossalista_modo') === 'local'; } catch (e) {}
+      return this.sessao ? !!this.sessao.expirada : !local;
+    },
+    sair() {
+      this.sessao = null; this.membroOk = false; this.guardar();
+      M().enviado = {}; M().cursor = null; Store.salvar();
+    },
+    async auth(corpo, tipo) {
+      const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=${tipo}`, { method: 'POST', headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { const e = new Error(d.error_description || d.msg || d.message || 'Falha no login'); e.status = r.status; throw e; }
+      this.sessao = { token: d.access_token, refresh: d.refresh_token, expira: Date.now() + d.expires_in * 1000, email: (d.user && d.user.email) || (this.sessao && this.sessao.email) };
+      this.guardar();
+    },
+    async token() {
+      if (Date.now() > this.sessao.expira - 60000) {
+        try { await this.auth({ refresh_token: this.sessao.refresh }, 'refresh_token'); }
+        catch (e) { if (e.status === 400 || e.status === 401 || e.status === 403) { this.sessao.expirada = true; this.guardar(); } throw e; }
+      }
+      return this.sessao.token;
+    },
+    async api(caminho, opt = {}) {
+      const r = await fetch(`${SUPA_URL}/rest/v1/${caminho}`, Object.assign({}, opt, {
+        headers: Object.assign({ apikey: SUPA_KEY, Authorization: 'Bearer ' + await this.token(), 'Content-Type': 'application/json' }, opt.headers || {})
+      }));
+      if (!r.ok) { const e = new Error(`${r.status} ${(await r.text()).slice(0, 200)}`); e.status = r.status; throw e; }
+      const txt = await r.text();
+      return txt ? JSON.parse(txt) : null;
+    },
+    pendentes() {
+      const env = M().enviado, lista = [];
+      for (const col of COLECOES) for (const obj of Object.values(D()[col])) if (env[col + ':' + obj.id] !== (obj.atualizado || 0)) lista.push([col, obj]);
+      return lista;
+    },
+    receber(l) {
+      const col = l.colecao;
+      if (!D()[col]) return false;
+      const k = col + ':' + l.id, local = D()[col][l.id], tl = local ? local.atualizado || 0 : -1, tr = l.atualizado || 0;
+      if (tl > tr) return false;            // a mudança daqui é mais nova: vai subir no próximo envio
+      M().enviado[k] = tr;
+      if (tl === tr) return false;
+      D()[col][l.id] = l.dados;
+      return true;
+    },
+    agendar(ms = 600) {
+      if (!this.ativa()) return;
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.sincronizar(), ms);
+    },
+    async sincronizar() {
+      if (!this.ativa()) return;
+      if (this.rodando) { this.deNovo = true; return; }
+      if (!navigator.onLine) { this.estado = 'offline'; mostrarEstado(); return; }
+      this.rodando = true;
+      let chegou = false;
+      try {
+        if (!this.membroOk) {
+          const r = await this.api('lc_membros?select=user_id');
+          if (!r || !r.length) { this.estado = 'erro'; this.erro = 'Este login ainda não foi liberado na nuvem (rodar o script 02 do LEIA-ME).'; return; }
+          this.membroOk = true;
+        }
+        // 1) envia o que mudou aqui
+        const pend = this.pendentes();
+        for (let i = 0; i < pend.length; i += 500) {
+          const lote = pend.slice(i, i + 500);
+          await this.api('lc_dados?on_conflict=colecao,id', {
+            method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify(lote.map(([col, o]) => ({ colecao: col, id: o.id, dados: o, atualizado: o.atualizado || 0 })))
+          });
+          for (const [col, o] of lote) M().enviado[col + ':' + o.id] = o.atualizado || 0;
+        }
+        // 2) recebe o que mudou na nuvem (com 2 min de folga, para não perder gravações simultâneas)
+        let cursor = M().cursor, maior = cursor;
+        const filtro = cursor ? '&sinc_em=gte.' + encodeURIComponent(new Date(Date.parse(cursor) - 120000).toISOString()) : '';
+        for (let off = 0; ; off += 1000) {
+          const linhas = await this.api(`lc_dados?select=colecao,id,dados,atualizado,sinc_em${filtro}&order=sinc_em.asc,id.asc&limit=1000&offset=${off}`);
+          for (const l of linhas) {
+            if (this.receber(l)) chegou = true;
+            if (!maior || Date.parse(l.sinc_em) > Date.parse(maior)) maior = l.sinc_em;
+          }
+          if (linhas.length < 1000) break;
+        }
+        M().cursor = maior;
+        Store.salvar();
+        this.estado = this.pendentes().length ? 'pendente' : 'ok';
+        this.erro = '';
+      } catch (e) {
+        this.estado = e instanceof TypeError ? 'offline' : 'erro';
+        this.erro = this.sessao && this.sessao.expirada ? 'Sessão expirada: entre de novo.' : e.message;
+      } finally {
+        this.rodando = false;
+        if (chegou) render(true);
+        mostrarEstado();
+        if (this.deNovo) { this.deNovo = false; this.agendar(200); }
+      }
+    }
+  };
+
+  /* ---------- interface ---------- */
+  let tela = 'listas', listaAtual = null, destacar = null;
+
+  function toast(msg, acao, fn) {
+    const t = $('#toast'), b = $('button', t);
+    $('span', t).textContent = msg;
+    b.classList.toggle('oculto', !acao);
+    b.textContent = acao || '';
+    b.onclick = () => { t.classList.remove('visivel'); fn && fn(); };
+    t.classList.add('visivel');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => t.classList.remove('visivel'), acao ? 5000 : 2600);
+  }
+
+  function mostrarEstado() {
+    const el = $('.estado');
+    if (!el) return;
+    const est = !Nuvem.configurada() || !Nuvem.sessao ? 'local' : Nuvem.sessao.expirada ? 'erro' : Nuvem.estado;
+    el.className = 'estado ' + est;
+    el.title = { local: 'Só neste aparelho', ok: 'Sincronizado', pendente: 'Enviando…', offline: 'Sem internet: envia quando voltar', erro: 'Erro na sincronização' }[est] || '';
+    const info = $('#info-nuvem');
+    if (info) info.innerHTML = textoNuvem();
+  }
+  function textoNuvem() {
+    if (!Nuvem.configurada()) return 'Nuvem ainda não configurada: os dados ficam só neste aparelho.';
+    if (!Nuvem.sessao) return 'Usando só neste aparelho.';
+    if (Nuvem.sessao.expirada) return '<span style="color:var(--danger)">Sessão expirada: entre de novo.</span>';
+    const t = { ok: 'Sincronizado', pendente: 'Enviando mudanças…', offline: 'Sem internet: as mudanças sobem quando voltar.', erro: 'Erro: ' + esc(Nuvem.erro), local: '' }[Nuvem.estado] || '';
+    return `${esc(Nuvem.sessao.email)}<br>${t}`;
+  }
+
+  function cabecalho(titulo, { voltar, direita } = {}) {
+    return `<header class="topo${voltar ? ' sub' : ''}">
+      ${voltar ? `<button class="btn-icone" data-acao="voltar" aria-label="Voltar">${ICONE.voltar}</button>` : ''}
+      <h1>${esc(titulo)}</h1><span class="estado" aria-hidden="true"></span>${direita || ''}</header>`;
+  }
+  function abas() {
+    const a = (id, rot, ic) => `<button data-aba="${id}" class="${(tela === id || (id === 'listas' && tela === 'lista')) ? 'ativa' : ''}">${ICONE[ic]}${rot}</button>`;
+    return `<nav class="abas">${a('listas', 'Listas', 'abaListas')}${a('historico', 'Histórico', 'abaHist')}${a('ajustes', 'Ajustes', 'abaAjustes')}</nav>`;
+  }
+
+  // render(remoto): quando chegam dados da nuvem, não redesenha telas com campos sendo digitados
+  function render(remoto) {
+    if (Nuvem.precisaLogin()) return telaLogin();
+    if (tela === 'lista' && (!listaAtual || !D().listas[listaAtual] || D().listas[listaAtual].apagado)) tela = 'listas';
+    if (remoto && tela === 'ajustes') return;
+    if (tela === 'lista' && $('#campo-item')) { atualizarLista(); return; }
+    document.body.classList.remove('com-rodape');
+    const app = $('#app');
+    if (tela === 'listas') app.innerHTML = telaListas();
+    else if (tela === 'lista') { app.innerHTML = telaLista(); atualizarLista(); }
+    else if (tela === 'historico') app.innerHTML = telaHistorico();
+    else if (tela === 'ajustes') app.innerHTML = telaAjustes();
+    mostrarEstado();
+  }
+  function ir(t, id) { tela = t; if (id) listaAtual = id; $('#app').innerHTML = ''; render(); window.scrollTo(0, 0); }
+
+  /* tela: listas */
+  function telaListas() {
+    const listas = listasOrdenadas();
+    const cards = listas.map((l) => {
+      const its = itensDa(l.id), falta = its.filter((i) => !i.marcado).length, car = its.length - falta;
+      const det = its.length ? `${falta} ${falta === 1 ? 'item' : 'itens'} para comprar${car ? ` · ${car} no carrinho` : ''}` : 'Vazia';
+      return `<button class="cartao lista-card" data-abrir="${esc(l.id)}"><span class="emoji">${esc(l.emoji || '🛒')}</span>
+        <span class="info"><div class="nome">${esc(l.nome)}</div><div class="det">${det}</div></span><span class="seta">›</span></button>`;
+    }).join('');
+    return cabecalho('Nossa Lista', { direita: `<button class="btn-icone" data-acao="nova-lista" aria-label="Nova lista">${ICONE.mais}</button>` }) +
+      `<main><div class="listas" style="margin-top:8px">${cards}</div>
+      <button class="btn largo" style="margin-top:14px" data-acao="nova-lista">${ICONE.mais.replace('<svg', '<svg width="18" height="18"')} Nova lista</button></main>` + abas();
+  }
+
+  /* tela: lista aberta */
+  function telaLista() {
+    const l = D().listas[listaAtual];
+    return cabecalho(`${l.emoji || ''} ${l.nome}`, { voltar: true, direita: `<button class="btn-icone" data-acao="menu-lista" aria-label="Opções">${ICONE.menu}</button>` }) +
+      `<main>
+        <div class="adicionar">
+          <form id="form-item" autocomplete="off" style="position:relative">
+            <input id="campo-item" enterkeyhint="done" placeholder="Adicionar item (ex.: 2 kg arroz)" autocapitalize="sentences">
+            <button class="btn primario" aria-label="Adicionar">${ICONE.mais.replace('<svg', '<svg width="20" height="20"')}</button>
+            <div class="sugestoes oculto" id="sugestoes"></div>
+          </form>
+          <div class="chips" id="chips"></div>
+        </div>
+        <div id="conteudo"></div>
+      </main>
+      <div class="rodape oculto" id="rodape"></div>` + abas();
+  }
+
+  function atualizarLista() {
+    const its = itensDa(listaAtual);
+    const falta = its.filter((i) => !i.marcado), car = its.filter((i) => i.marcado);
+    const linha = (i) => {
+      const v = valorItem(i), det = detalheItem(i, true);
+      return `<div class="item${i.marcado ? ' marcado' : ''}${destacar === i.id ? ' novo' : ''}" data-id="${esc(i.id)}">
+        <button class="check" data-marcar="${esc(i.id)}" aria-label="${i.marcado ? 'Desmarcar' : 'Marcar'} ${esc(i.nome)}"><span>${ICONE.check}</span></button>
+        <button class="corpo" data-editar="${esc(i.id)}"><div class="nome">${esc(i.nome)}</div>${det ? `<div class="det">${esc(det)}</div>` : ''}</button>
+        ${v != null ? `<div class="valor">${moeda(v)}</div>` : ''}</div>`;
+    };
+    let html = '';
+    if (!its.length) html = `<div class="vazio"><div class="grande">🧺</div>Lista vazia.<br>Digite acima o que precisa comprar.</div>`;
+    for (const c of ordemCats(falta)) html += `<div class="grupo"><h3>${esc(c)}</h3><div class="cartao itens">${falta.filter((i) => i.cat === c || (!i.cat && c === 'Outros')).sort((a, b) => a.nome.localeCompare(b.nome)).map(linha).join('')}</div></div>`;
+    if (car.length) html += `<div class="grupo"><h3>No carrinho · ${car.length}</h3><div class="cartao itens">${car.sort((a, b) => a.nome.localeCompare(b.nome)).map(linha).join('')}</div></div>`;
+    $('#conteudo').innerHTML = html;
+    destacar = null;
+
+    // rodapé com totais
+    const tCar = car.reduce((s, i) => s + (valorItem(i) || 0), 0);
+    const tTudo = its.reduce((s, i) => s + (valorItem(i) || 0), 0);
+    const semPreco = its.filter((i) => i.preco == null).length;
+    const rod = $('#rodape');
+    rod.classList.toggle('oculto', !its.length);
+    document.body.classList.toggle('com-rodape', !!its.length);
+    rod.innerHTML = `<div class="cartao"><div class="totais"><small>No carrinho (${car.length})</small><b>${moeda(tCar)}</b>
+      <small>${tTudo ? `Lista ${moeda(tTudo)}` : ''}${tTudo && semPreco ? ' · ' : ''}${semPreco ? `${semPreco} sem preço` : ''}</small></div>
+      <button class="btn primario" data-acao="finalizar" ${car.length ? '' : 'disabled'}>Finalizar compra</button></div>`;
+    atualizarChips();
+    mostrarEstado();
+  }
+
+  function atualizarChips() {
+    const el = $('#chips');
+    if (!el) return;
+    const naLista = new Set(itensDa(listaAtual).filter((i) => !i.marcado).map((i) => norm(i.nome)));
+    const freq = ativos('catalogo').filter((c) => (c.porLista || {})[listaAtual] && !naLista.has(c.id))
+      .sort((a, b) => b.porLista[listaAtual] - a.porLista[listaAtual] || (b.ultima || 0) - (a.ultima || 0)).slice(0, 15);
+    el.innerHTML = freq.map((c) => `<button class="chip" data-chip="${esc(c.nome)}"><b>+</b>${esc(c.nome)}</button>`).join('');
+    el.classList.toggle('oculto', !freq.length);
+  }
+
+  function atualizarSugestoes() {
+    const caixa = $('#sugestoes'), campo = $('#campo-item');
+    const q = norm(lerTextoItem(campo.value).nome);
+    if (q.length < 2) { caixa.classList.add('oculto'); return; }
+    const naLista = new Set(itensDa(listaAtual).filter((i) => !i.marcado).map((i) => norm(i.nome)));
+    const achados = ativos('catalogo').filter((c) => c.id.includes(q) && c.id !== q)
+      .sort((a, b) => (b.id.startsWith(q) - a.id.startsWith(q)) || (b.vezes || 0) - (a.vezes || 0)).slice(0, 6);
+    caixa.innerHTML = achados.map((c) => `<button type="button" data-sug="${esc(c.nome)}"><span>${esc(c.nome)}</span><small>${naLista.has(c.id) ? 'já na lista' : c.vezes ? `comprado ${c.vezes}×` : esc(c.cat || '')}</small></button>`).join('');
+    caixa.classList.toggle('oculto', !achados.length);
+  }
+
+  /* tela: histórico */
+  function telaHistorico() {
+    const compras = ativos('compras').sort((a, b) => b.data - a.data);
+    let html = '';
+    if (!compras.length) html = `<div class="vazio"><div class="grande">🧾</div>Nenhuma compra ainda.<br>Ao tocar em <b>Finalizar compra</b> numa lista, ela aparece aqui.</div>`;
+    const porMes = {};
+    for (const c of compras) { const k = nomeMes(c.data); (porMes[k] = porMes[k] || []).push(c); }
+    for (const [mes, lista] of Object.entries(porMes)) {
+      const tot = lista.reduce((s, c) => s + (c.total || 0), 0);
+      html += `<div class="titulo-secao">${esc(mes)}</div><div class="cartao">
+        <div class="mes"><span>${lista.length} ${lista.length === 1 ? 'compra' : 'compras'}</span><b>${moeda(tot)}</b></div>
+        ${lista.map((c) => `<button class="compra" data-compra="${esc(c.id)}"><span style="font-size:24px">${esc(c.emoji || '🛒')}</span>
+          <span class="info"><div>${esc(c.nomeLista)} · ${dataCurta(c.data)}</div><div class="det">${c.itens.length} ${c.itens.length === 1 ? 'item' : 'itens'}${c.por ? ' · ' + esc(c.por) : ''}</div></span>
+          <span class="total">${moeda(c.total)}</span></button>`).join('')}</div>`;
+    }
+    return cabecalho('Histórico') + `<main>${html}</main>` + abas();
+  }
+
+  /* tela: ajustes */
+  function telaAjustes() {
+    const lc = cats();
+    const nuvem = !Nuvem.configurada() ? '' : Nuvem.sessao
+      ? `<button class="btn largo" style="margin-top:10px" data-acao="sincronizar">Sincronizar agora</button>
+         <button class="btn largo perigo" style="margin-top:8px" data-acao="sair">Sair desta conta</button>`
+      : `<button class="btn primario largo" style="margin-top:10px" data-acao="entrar">Entrar para sincronizar</button>`;
+    return cabecalho('Ajustes') + `<main>
+      <div class="titulo-secao">Você</div>
+      <div class="cartao" style="padding:14px"><div class="campo" style="margin:0"><label for="meu-nome">Seu nome (aparece nos itens que você adicionar)</label>
+        <input id="meu-nome" value="${esc(M().nome)}" placeholder="${esc(meuNome() || 'Ex.: Mauricio')}" autocapitalize="words"></div></div>
+
+      <div class="titulo-secao">Sincronização</div>
+      <div class="cartao" style="padding:14px"><div id="info-nuvem" style="color:var(--muted);font-size:15px">${textoNuvem()}</div>${nuvem}</div>
+
+      <div class="titulo-secao">No mercado</div>
+      <div class="cartao"><div class="linha"><div class="rot">Pedir o preço ao marcar<small>Abre o campo de preço quando você marca um item</small></div>
+        <label class="chave"><input type="checkbox" id="pedir-preco" ${M().pedirPreco ? 'checked' : ''}><span></span></label></div></div>
+
+      <div class="titulo-secao"><span>Categorias (ordem dos corredores)</span></div>
+      <div class="cartao">${lc.map((c, k) => `<div class="linha"><div class="rot">${esc(c)}</div><div class="acoes">
+        <button data-cat-subir="${k}" aria-label="Subir" ${k === 0 ? 'disabled style="opacity:.3"' : ''}>${ICONE.cima}</button>
+        <button data-cat-descer="${k}" aria-label="Descer" ${k === lc.length - 1 ? 'disabled style="opacity:.3"' : ''}>${ICONE.baixo}</button>
+        <button data-cat-editar="${k}" aria-label="Renomear">${ICONE.lapis}</button>
+        ${c === 'Outros' ? '' : `<button data-cat-apagar="${k}" aria-label="Remover">${ICONE.x}</button>`}</div></div>`).join('')}
+        <div class="linha"><button class="btn largo" data-acao="nova-cat">${ICONE.mais.replace('<svg', '<svg width="18" height="18"')} Nova categoria</button></div></div>
+
+      <div class="titulo-secao">Cópia de segurança</div>
+      <div class="cartao" style="padding:14px;display:grid;gap:8px">
+        <button class="btn largo" data-acao="exportar">Salvar cópia (arquivo)</button>
+        <label class="btn largo">Restaurar cópia<input type="file" id="arquivo-backup" accept=".json,application/json" class="oculto"></label>
+      </div>
+
+      <div class="titulo-secao">Instalar no iPhone</div>
+      <div class="cartao" style="padding:14px;color:var(--muted);font-size:15px">No Safari, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>. O app abre em tela cheia e funciona sem internet.</div>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:24px">Nossa Lista · versão ${VERSAO}</p>
+    </main>` + abas();
+  }
+
+  /* tela: login */
+  function telaLogin() {
+    document.body.classList.remove('com-rodape');
+    const expirada = Nuvem.sessao && Nuvem.sessao.expirada;
+    $('#app').innerHTML = `<div class="login"><img src="icon-192.png" alt=""><h1>Nossa Lista</h1>
+      <p>${expirada ? 'Sua sessão expirou. Entre de novo para continuar sincronizando.' : 'Entre com o seu login para a lista aparecer nos dois celulares.'}</p>
+      <form id="form-login"><input type="email" id="login-email" placeholder="E-mail" autocomplete="username" value="${esc(Nuvem.sessao ? Nuvem.sessao.email : '')}" required>
+        <input type="password" id="login-senha" placeholder="Senha" autocomplete="current-password" required>
+        <div class="erro" id="login-erro"></div><button class="btn primario largo">Entrar</button></form>
+      <button class="link" data-acao="so-aparelho">Usar só neste aparelho por enquanto</button></div>`;
+  }
+
+  /* ---------- folha (bottom sheet) ---------- */
+  function abrirFolha(html, aoMontar) {
+    fecharFolha(true);
+    const veu = document.createElement('div'); veu.className = 'veu';
+    const f = document.createElement('div'); f.className = 'folha'; f.setAttribute('role', 'dialog');
+    f.innerHTML = '<div class="puxador"></div>' + html;
+    document.body.append(veu, f);
+    veu.onclick = () => fecharFolha();
+    requestAnimationFrame(() => { veu.classList.add('aberto'); f.classList.add('aberta'); });
+    aoMontar && aoMontar(f);
+    return f;
+  }
+  function fecharFolha(ja) {
+    const f = $('.folha'), v = $('.veu');
+    if (!f) return;
+    if (ja) { f.remove(); v && v.remove(); return; }
+    f.classList.remove('aberta'); v && v.classList.remove('aberto');
+    setTimeout(() => { f.remove(); v && v.remove(); }, 250);
+  }
+  function confirmar(titulo, texto, rotulo, fn, perigo = true) {
+    abrirFolha(`<h2>${esc(titulo)}</h2><p style="color:var(--muted);margin-top:-6px">${texto}</p>
+      <div class="botoes"><button class="btn" data-f="nao">Cancelar</button><button class="btn ${perigo ? 'perigo' : 'primario'}" data-f="sim" style="${perigo ? 'background:var(--surface-2)' : ''}">${esc(rotulo)}</button></div>`, (f) => {
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      $('[data-f=sim]', f).onclick = () => { fecharFolha(); fn(); };
+    });
+  }
+  function pedirTexto(titulo, valor, rotulo, fn) {
+    abrirFolha(`<h2>${esc(titulo)}</h2><form><input id="f-texto" value="${esc(valor || '')}" autocapitalize="sentences">
+      <div class="botoes"><button type="button" class="btn" data-f="nao">Cancelar</button><button class="btn primario">${esc(rotulo)}</button></div></form>`, (f) => {
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      $('form', f).onsubmit = (e) => { e.preventDefault(); const v = $('#f-texto', f).value.trim(); if (!v) return; fecharFolha(); fn(v); };
+      setTimeout(() => $('#f-texto', f).focus(), 50);
+    });
+  }
+
+  function abrirItem(id) {
+    const i = D().itens[id];
+    if (!i) return;
+    const opCats = [...new Set([...cats(), i.cat || 'Outros'])].map((c) => `<option ${c === i.cat ? 'selected' : ''}>${esc(c)}</option>`).join('');
+    const opUn = [...new Set([...UNIDADES, i.un || 'un'])].map((u) => `<option ${u === (i.un || 'un') ? 'selected' : ''}>${esc(u)}</option>`).join('');
+    const opListas = listasOrdenadas().map((l) => `<option value="${esc(l.id)}" ${l.id === i.lista ? 'selected' : ''}>${esc(l.emoji || '')} ${esc(l.nome)}</option>`).join('');
+    const quem = [i.por ? `Adicionado por ${i.por}` : '', i.marcado && i.marcadoPor ? `marcado por ${i.marcadoPor}` : ''].filter(Boolean).join(' · ');
+    abrirFolha(`<h2>Editar item</h2><form id="f-item">
+      <div class="campo"><label>Nome</label><input id="fi-nome" value="${esc(i.nome)}" autocapitalize="sentences"></div>
+      <div class="dupla">
+        <div class="campo"><label>Quantidade</label><div class="qtd"><button type="button" data-q="-1">−</button><input id="fi-qtd" inputmode="decimal" value="${esc(fmtNum(i.qtd))}" placeholder="—"><button type="button" data-q="1">+</button></div></div>
+        <div class="campo"><label>Unidade</label><select id="fi-un">${opUn}</select></div>
+      </div>
+      <div class="dupla">
+        <div class="campo"><label id="fi-rot-preco">${rotuloPreco(i.un)}</label><input id="fi-preco" inputmode="decimal" placeholder="R$ 0,00" value="${i.preco != null ? esc(fmtNum(i.preco)) : ''}"></div>
+        <div class="campo"><label>Categoria</label><select id="fi-cat">${opCats}</select></div>
+      </div>
+      <div class="campo"><label>Observação</label><input id="fi-obs" value="${esc(i.obs || '')}" placeholder="Ex.: marca X, sem lactose" autocapitalize="sentences"></div>
+      <div class="campo"><label>Lista</label><select id="fi-lista">${opListas}</select></div>
+      ${quem ? `<p style="color:var(--muted);font-size:13px;margin:0 2px">${esc(quem)}</p>` : ''}
+      <div class="botoes"><button type="button" class="btn perigo" data-f="apagar">Excluir</button><button class="btn primario">Salvar</button></div></form>`, (f) => {
+      $$('[data-q]', f).forEach((b) => (b.onclick = () => {
+        const passo = ['kg', 'L'].includes($('#fi-un', f).value) ? 0.5 : ['g', 'ml'].includes($('#fi-un', f).value) ? 100 : 1;
+        const atual = numero($('#fi-qtd', f).value);
+        const n = Math.max(0, Math.round(((atual == null ? (b.dataset.q > 0 ? 0 : 1) : atual) + passo * b.dataset.q) * 1000) / 1000);
+        $('#fi-qtd', f).value = n ? fmtNum(n) : '';
+      }));
+      $('#fi-un', f).onchange = () => { $('#fi-rot-preco', f).textContent = rotuloPreco($('#fi-un', f).value); };
+      $('[data-f=apagar]', f).onclick = () => { fecharFolha(); apagarItem(id); };
+      $('#f-item', f).onsubmit = (e) => {
+        e.preventDefault();
+        const nome = $('#fi-nome', f).value.trim();
+        if (!nome) return;
+        const atual = D().itens[id];
+        const novo = Object.assign({}, atual, {
+          nome, qtd: numero($('#fi-qtd', f).value), un: $('#fi-un', f).value, preco: numero($('#fi-preco', f).value),
+          cat: $('#fi-cat', f).value, obs: $('#fi-obs', f).value.trim(), lista: $('#fi-lista', f).value
+        });
+        if (novo.qtd === 0) novo.qtd = null;
+        Store.put('itens', novo);
+        lembrarProduto(novo, false);
+        Store.concluir();
+        fecharFolha();
+        render();
+        if (novo.lista !== atual.lista) toast(`Movido para ${D().listas[novo.lista].nome}`);
+      };
+    });
+  }
+
+  function abrirPreco(id) {
+    const i = D().itens[id];
+    abrirFolha(`<h2>${esc(i.nome)}</h2><form><div class="campo"><label>${rotuloPreco(i.un)}</label>
+      <input id="fp-preco" inputmode="decimal" placeholder="R$ 0,00" value="${i.preco != null ? esc(fmtNum(i.preco)) : ''}"></div>
+      <div class="botoes"><button type="button" class="btn" data-f="pular">Pular</button><button class="btn primario">Salvar preço</button></div></form>`, (f) => {
+      $('[data-f=pular]', f).onclick = () => fecharFolha();
+      $('form', f).onsubmit = (e) => {
+        e.preventDefault();
+        const novo = Object.assign({}, D().itens[id], { preco: numero($('#fp-preco', f).value) });
+        Store.put('itens', novo); lembrarProduto(novo, false); Store.concluir(); fecharFolha(); render();
+      };
+      setTimeout(() => { const c = $('#fp-preco', f); c.focus(); c.select(); }, 60);
+    });
+  }
+
+  function abrirLista(id) {
+    const l = id ? D().listas[id] : { nome: '', emoji: '🛒' };
+    let emoji = l.emoji || '🛒';
+    abrirFolha(`<h2>${id ? 'Editar lista' : 'Nova lista'}</h2><form>
+      <div class="campo"><label>Nome</label><input id="fl-nome" value="${esc(l.nome)}" placeholder="Ex.: Churrasco, Casa" autocapitalize="sentences"></div>
+      <div class="campo"><label>Ícone</label><div class="emojis">${EMOJIS.map((e) => `<button type="button" data-emoji="${e}" class="${e === emoji ? 'sel' : ''}">${e}</button>`).join('')}</div></div>
+      <div class="botoes"><button type="button" class="btn" data-f="nao">Cancelar</button><button class="btn primario">${id ? 'Salvar' : 'Criar lista'}</button></div></form>`, (f) => {
+      $$('[data-emoji]', f).forEach((b) => (b.onclick = () => { emoji = b.dataset.emoji; $$('[data-emoji]', f).forEach((x) => x.classList.toggle('sel', x === b)); }));
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      $('form', f).onsubmit = (e) => {
+        e.preventDefault();
+        const nome = $('#fl-nome', f).value.trim();
+        if (!nome) return;
+        const ordem = id ? l.ordem : Math.max(0, ...listasOrdenadas().map((x) => x.ordem || 0)) + 1;
+        const nova = Store.put('listas', Object.assign({}, id ? l : { id: uid() }, { nome, emoji, ordem }));
+        Store.concluir(); fecharFolha();
+        if (id) render(); else ir('lista', nova.id);
+      };
+      if (!id) setTimeout(() => $('#fl-nome', f).focus(), 60);
+    });
+  }
+
+  function menuLista() {
+    const l = D().listas[listaAtual];
+    const its = itensDa(listaAtual), car = its.filter((i) => i.marcado);
+    abrirFolha(`<h2>${esc(l.emoji || '')} ${esc(l.nome)}</h2><div class="menu">
+      <button data-m="compartilhar">📤 Enviar a lista (WhatsApp, Mensagens…)</button>
+      <button data-m="editar">✏️ Renomear / trocar ícone</button>
+      ${car.length ? '<button data-m="desmarcar">↩️ Desmarcar todos</button><button data-m="tirar">🧹 Tirar os marcados sem guardar no histórico</button>' : ''}
+      ${its.length ? '<button data-m="limpar" class="perigo">🗑️ Esvaziar a lista</button>' : ''}
+      <button data-m="apagar" class="perigo">❌ Excluir a lista</button></div>`, (f) => {
+      const op = {
+        compartilhar() {
+          const t = textoDaLista(listaAtual);
+          if (navigator.share) navigator.share({ text: t }).catch(() => {});
+          else navigator.clipboard.writeText(t).then(() => toast('Lista copiada'));
+        },
+        editar() { abrirLista(listaAtual); },
+        desmarcar() { for (const i of car) Store.put('itens', Object.assign({}, i, { marcado: false })); Store.concluir(); render(); },
+        tirar() { for (const i of car) Store.put('itens', Object.assign({}, i, { apagado: true })); Store.concluir(); render(); },
+        limpar() { confirmar('Esvaziar a lista?', `Os ${its.length} itens saem da lista (não vão para o histórico).`, 'Esvaziar', () => { for (const i of its) Store.put('itens', Object.assign({}, i, { apagado: true })); Store.concluir(); render(); }); },
+        apagar() {
+          confirmar(`Excluir "${l.nome}"?`, 'A lista e os itens dela somem dos dois celulares. O histórico de compras continua.', 'Excluir', () => {
+            for (const i of its) Store.put('itens', Object.assign({}, i, { apagado: true }));
+            Store.put('listas', Object.assign({}, l, { apagado: true })); Store.concluir(); ir('listas');
+          });
+        }
+      };
+      $$('[data-m]', f).forEach((b) => (b.onclick = () => { fecharFolha(true); op[b.dataset.m](); }));
+    });
+  }
+
+  function abrirCompra(id) {
+    const c = D().compras[id];
+    const destinos = listasOrdenadas();
+    const destino = destinos.find((l) => l.id === c.lista) ? c.lista : (destinos[0] || {}).id;
+    abrirFolha(`<h2>${esc(c.emoji || '')} ${esc(c.nomeLista)} · ${new Date(c.data).toLocaleDateString('pt-BR')}</h2>
+      <ul class="lista-simples">${c.itens.map((i) => { const v = valorItem(i); return `<li><span>${esc(i.nome)}${i.qtd != null ? ` <small style="color:var(--muted)">${fmtNum(i.qtd)} ${esc(i.un)}</small>` : ''}</span><span>${v != null ? moeda(v) : '—'}</span></li>`; }).join('')}
+        <li><b>Total</b><b>${moeda(c.total)}</b></li></ul>
+      ${c.por ? `<p style="color:var(--muted);font-size:13px">Finalizada por ${esc(c.por)}</p>` : ''}
+      ${destino ? `<div class="campo"><label>Colocar estes itens de novo na lista</label><select id="fc-lista">${destinos.map((l) => `<option value="${esc(l.id)}" ${l.id === destino ? 'selected' : ''}>${esc(l.emoji || '')} ${esc(l.nome)}</option>`).join('')}</select></div>` : ''}
+      <div class="botoes"><button class="btn perigo" data-f="apagar">Excluir</button>${destino ? '<button class="btn primario" data-f="repetir">Repetir compra</button>' : ''}</div>`, (f) => {
+      $('[data-f=apagar]', f).onclick = () => confirmar('Excluir do histórico?', 'Esta compra some do histórico nos dois celulares.', 'Excluir', () => { Store.put('compras', Object.assign({}, c, { apagado: true })); Store.concluir(); render(); });
+      const r = $('[data-f=repetir]', f);
+      if (r) r.onclick = () => { const lid = $('#fc-lista', f).value; const n = repetirCompra(id, lid); fecharFolha(); toast(n ? `${n} ${n === 1 ? 'item adicionado' : 'itens adicionados'}` : 'Todos já estavam na lista'); ir('lista', lid); };
+    });
+  }
+
+  /* ---------- categorias ---------- */
+  function salvarCats(lista) { Store.put('config', Object.assign({}, D().config.cats, { lista })); Store.concluir(); render(); }
+  function moverCat(k, d) { const l = cats().slice(); [l[k], l[k + d]] = [l[k + d], l[k]]; salvarCats(l); }
+  function renomearCat(k) {
+    const antigo = cats()[k];
+    pedirTexto('Renomear categoria', antigo, 'Salvar', (novo) => {
+      if (cats().includes(novo) && novo !== antigo) return toast('Já existe essa categoria');
+      const l = cats().slice(); l[k] = novo;
+      for (const i of ativos('itens').filter((x) => x.cat === antigo)) Store.put('itens', Object.assign({}, i, { cat: novo }));
+      for (const c of ativos('catalogo').filter((x) => x.cat === antigo)) Store.put('catalogo', Object.assign({}, c, { cat: novo }));
+      salvarCats(l);
+    });
+  }
+  function apagarCat(k) {
+    const nome = cats()[k];
+    confirmar(`Remover "${nome}"?`, 'Os itens desta categoria passam para "Outros".', 'Remover', () => {
+      for (const i of ativos('itens').filter((x) => x.cat === nome)) Store.put('itens', Object.assign({}, i, { cat: 'Outros' }));
+      for (const c of ativos('catalogo').filter((x) => x.cat === nome)) Store.put('catalogo', Object.assign({}, c, { cat: 'Outros' }));
+      salvarCats(cats().filter((c) => c !== nome));
+    });
+  }
+
+  /* ---------- backup ---------- */
+  function exportar() {
+    const blob = new Blob([JSON.stringify({ app: 'nossa-lista', versao: VERSAO, data: Date.now(), dados: D() })], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `nossa-lista-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function restaurar(arquivo) {
+    const r = new FileReader();
+    r.onload = () => {
+      let d; try { d = JSON.parse(r.result); } catch (e) { return toast('Arquivo inválido'); }
+      if (!d || d.app !== 'nossa-lista' || !d.dados) return toast('Não é uma cópia da Nossa Lista');
+      confirmar('Restaurar a cópia?', 'Os registros da cópia são juntados aos daqui (vale o mais recente de cada um).', 'Restaurar', () => {
+        for (const col of COLECOES) for (const o of Object.values(d.dados[col] || {})) {
+          const atual = D()[col][o.id];
+          if (!atual || (o.atualizado || 0) > (atual.atualizado || 0)) D()[col][o.id] = o;
+        }
+        Store.concluir(); render(); toast('Cópia restaurada');
+      }, false);
+    };
+    r.readAsText(arquivo);
+  }
+
+  /* ---------- eventos ---------- */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, [data-abrir]');
+    if (!t) {
+      if (!e.target.closest('#form-item')) { const s = $('#sugestoes'); s && s.classList.add('oculto'); }
+      return;
+    }
+    const d = t.dataset;
+    if (d.aba) return ir(d.aba);
+    if (d.abrir) return ir('lista', d.abrir);
+    if (d.marcar) return alternarItem(d.marcar);
+    if (d.editar) return abrirItem(d.editar);
+    if (d.compra) return abrirCompra(d.compra);
+    if (d.chip) { adicionarItem(listaAtual, d.chip); return; }
+    if (d.sug) { $('#campo-item').value = ''; $('#sugestoes').classList.add('oculto'); adicionarItem(listaAtual, d.sug); $('#campo-item').focus(); return; }
+    if (d.catSubir) return moverCat(+d.catSubir, -1);
+    if (d.catDescer) return moverCat(+d.catDescer, 1);
+    if (d.catEditar) return renomearCat(+d.catEditar);
+    if (d.catApagar) return apagarCat(+d.catApagar);
+    switch (d.acao) {
+      case 'voltar': return ir('listas');
+      case 'nova-lista': return abrirLista();
+      case 'menu-lista': return menuLista();
+      case 'finalizar': {
+        const car = itensDa(listaAtual).filter((i) => i.marcado), falta = itensDa(listaAtual).length - car.length;
+        const tot = car.reduce((s, i) => s + (valorItem(i) || 0), 0);
+        return confirmar('Finalizar compra?', `${car.length} ${car.length === 1 ? 'item' : 'itens'} no carrinho · <b>${moeda(tot)}</b>.<br>Eles vão para o histórico${falta ? ` e os ${falta} não marcados continuam na lista` : ''}.`, 'Finalizar', () => finalizarCompra(listaAtual), false);
+      }
+      case 'nova-cat': return pedirTexto('Nova categoria', '', 'Adicionar', (v) => { if (cats().includes(v)) return toast('Já existe'); const l = cats().slice(); l.splice(Math.max(0, l.indexOf('Outros')), 0, v); salvarCats(l); });
+      case 'exportar': return exportar();
+      case 'sincronizar': Nuvem.sincronizar().then(() => toast(Nuvem.estado === 'ok' ? 'Sincronizado' : Nuvem.erro || 'Sem internet')); return;
+      case 'sair': return confirmar('Sair desta conta?', 'A lista continua neste aparelho, mas para de sincronizar até você entrar de novo.', 'Sair', () => { Nuvem.sair(); try { localStorage.setItem('nossalista_modo', 'local'); } catch (x) {} render(); });
+      case 'entrar': try { localStorage.removeItem('nossalista_modo'); } catch (x) {} return render();
+      case 'so-aparelho': try { localStorage.setItem('nossalista_modo', 'local'); } catch (x) {} if (Nuvem.sessao) Nuvem.sair(); return ir('listas');
+    }
+  });
+
+  document.addEventListener('submit', async (e) => {
+    if (e.target.id === 'form-item') {
+      e.preventDefault();
+      const c = $('#campo-item');
+      const v = c.value.trim();
+      if (!v) return;
+      c.value = '';
+      $('#sugestoes').classList.add('oculto');
+      adicionarItem(listaAtual, v);
+      c.focus();
+    }
+    if (e.target.id === 'form-login') {
+      e.preventDefault();
+      const erro = $('#login-erro'), botao = $('button', e.target);
+      erro.textContent = ''; botao.disabled = true; botao.textContent = 'Entrando…';
+      try {
+        const email = $('#login-email').value.trim().toLowerCase();
+        if (Nuvem.sessao && Nuvem.sessao.email && Nuvem.sessao.email !== email) Nuvem.sair();
+        await Nuvem.auth({ email, password: $('#login-senha').value }, 'password');
+        try { localStorage.removeItem('nossalista_modo'); } catch (x) {}
+        Nuvem.membroOk = false;
+        ir('listas');
+        Nuvem.sincronizar();
+      } catch (x) {
+        erro.textContent = x instanceof TypeError ? 'Sem internet.' : /invalid/i.test(x.message) ? 'E-mail ou senha incorretos.' : x.message;
+        botao.disabled = false; botao.textContent = 'Entrar';
+      }
+    }
+  });
+
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'campo-item') atualizarSugestoes();
+  });
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'meu-nome') { M().nome = e.target.value.trim(); Store.salvar(); toast('Nome salvo'); }
+    if (e.target.id === 'pedir-preco') { M().pedirPreco = e.target.checked; Store.salvar(); }
+    if (e.target.id === 'arquivo-backup' && e.target.files[0]) { restaurar(e.target.files[0]); e.target.value = ''; }
+  });
+
+  // Atualização "ao vivo": com o app aberto, confere a nuvem a cada 4 s (uma consulta leve)
+  setInterval(() => { if (document.visibilityState === 'visible' && !Nuvem.rodando) Nuvem.sincronizar(); }, 4000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') Nuvem.agendar(50); });
+  window.addEventListener('online', () => Nuvem.agendar(50));
+  window.addEventListener('offline', () => { Nuvem.estado = 'offline'; mostrarEstado(); });
+  window.addEventListener('storage', (e) => { if (e.key === CHAVE) { Store.carregar(); render(true); } });
+
+  /* ---------- início ---------- */
+  Store.carregar();
+  Nuvem.carregar();
+  if (Nuvem.ativa()) Nuvem.estado = 'pendente';
+  render();
+  Nuvem.agendar(50);
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  </script>
+</body>
+</html>
