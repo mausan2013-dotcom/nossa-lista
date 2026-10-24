@@ -66,6 +66,7 @@ Projeto gratuito: o Supabase pausa se ficar 7 dias sem nenhum uso. Abrindo o app
 
 ## Versões
 
+- **1.2.1** (24/10/2026) — X no canto de todas as telas que abrem de baixo (fixo ao rolar); na edição da compra, tirar item agora é uma lixeira para não confundir com o X de fechar.
 - **1.2** (24/10/2026) — arrastar para marcar/apagar; editar compras realizadas (preços em casa).
 - **1.1.1** (24/10/2026) — o botão "Enviar teste" diz se o celular não está cadastrado ou se o envio falhou.
   - Função `nl-avisar` corrigida: removido o cabeçalho `topic` (a Apple devolvia 400 BadWebPushTopic). Já implantada no Supabase em 24/10/2026.

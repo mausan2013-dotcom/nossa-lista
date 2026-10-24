@@ -185,11 +185,15 @@
     .veu.aberto { opacity: 1; }
     .folha {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 51; background: var(--surface); border-radius: 20px 20px 0 0;
-      padding: 8px 16px calc(var(--bottom) + 16px); max-height: 90vh; overflow-y: auto;
+      padding: 0 16px calc(var(--bottom) + 16px); max-height: 90vh; overflow-y: auto;
       transform: translateY(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); max-width: 640px; margin: 0 auto;
     }
     .folha.aberta { transform: none; }
-    .folha .puxador { width: 40px; height: 5px; border-radius: 3px; background: var(--border); margin: 0 auto 10px; }
+    /* topo fixo da folha: puxador no meio e X no canto, que continuam visíveis quando o conteúdo rola */
+    .folha .folha-topo { position: sticky; top: 0; z-index: 5; height: 50px; margin: 0 -16px 2px; padding-top: 9px; background: var(--surface); border-radius: 20px 20px 0 0; display: flex; justify-content: center; }
+    .folha .puxador { width: 40px; height: 5px; border-radius: 3px; background: var(--border); }
+    .folha .folha-x { position: absolute; right: 12px; top: 7px; width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); color: var(--muted); display: grid; place-items: center; }
+    .folha .folha-x svg { width: 16px; height: 16px; }
     .folha h2 { font-size: 20px; margin: 4px 0 14px; }
     .campo { margin-bottom: 12px; }
     .campo label { display: block; font-size: 13px; color: var(--muted); margin: 0 2px 5px; font-weight: 600; }
@@ -294,7 +298,7 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.2';
+  const VERSAO = '1.2.1';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
@@ -1256,9 +1260,10 @@
     fecharFolha(true);
     const veu = document.createElement('div'); veu.className = 'veu';
     const f = document.createElement('div'); f.className = 'folha'; f.setAttribute('role', 'dialog');
-    f.innerHTML = '<div class="puxador"></div>' + html;
+    f.innerHTML = `<div class="folha-topo"><div class="puxador"></div><button type="button" class="folha-x" aria-label="Fechar">${ICONE.x}</button></div>` + html;
     document.body.append(veu, f);
     veu.onclick = () => fecharFolha();
+    $('.folha-x', f).onclick = () => fecharFolha();
     requestAnimationFrame(() => { veu.classList.add('aberto'); f.classList.add('aberta'); });
     aoMontar && aoMontar(f);
     return f;
@@ -1473,7 +1478,7 @@
       };
       const desenhar = () => {
         $('#fc-itens', f).innerHTML = itens.map((i, k) => `<div class="cp-linha"><div class="cp-topo"><span class="cp-nome">${esc(i.nome)}</span>
-          <button type="button" class="cp-x" data-rm="${k}" aria-label="Tirar ${esc(i.nome)} da compra">${ICONE.x}</button></div>
+          <button type="button" class="cp-x" data-rm="${k}" aria-label="Tirar ${esc(i.nome)} da compra">${ICONE.lixo}</button></div>
           <div class="cp-campos"><input class="cp-qtd" data-k="${k}" data-c="qtd" inputmode="decimal" placeholder="1" value="${esc(fmtNum(i.qtd))}"><span class="cp-un">${esc(i.un || 'un')}</span><span class="cp-mult">×</span>
           <input class="cp-preco${i.preco == null ? ' falta' : ''}" data-k="${k}" data-c="preco" inputmode="decimal" placeholder="R$ por ${esc(porUn(i.un))}" value="${esc(precoTxt(i.preco))}">
           <span class="cp-val" data-val="${k}">${valorTxt(i)}</span></div></div>`).join('');
