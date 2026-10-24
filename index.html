@@ -270,7 +270,7 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.1';
+  const VERSAO = '1.1.1';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
@@ -1513,7 +1513,8 @@
         Avisos.registrar().then(() => Avisos.chamar({ tipo: 'teste', titulo: 'Nossa Lista', corpo: 'Aviso de teste: está funcionando ✓', tag: 'teste', teste: true }))
           .then(async (r) => {
             const d2 = await r.json().catch(() => ({}));
-            toast(r.ok ? (d2.enviados ? 'Aviso de teste enviado' : 'Nenhum celular cadastrado recebeu') : r.status === 404 ? 'Falta criar a função nl-avisar no Supabase' : 'Erro: ' + (d2.detalhe || d2.erro || r.status));
+            toast(r.ok ? (d2.enviados ? 'Aviso de teste enviado' : d2.alvos ? 'O envio falhou: confira os segredos VAPID_PUBLICA e VAPID_PRIVADA no Supabase' : 'Este celular não está cadastrado: desligue e ative os avisos de novo')
+              : r.status === 404 ? 'Falta criar a função nl-avisar no Supabase' : 'Erro: ' + (d2.detalhe || d2.erro || r.status));
           })
           .catch(() => toast('Sem internet'))
           .finally(() => { t.disabled = false; });

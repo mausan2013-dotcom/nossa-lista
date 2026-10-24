@@ -63,5 +63,6 @@ Projeto gratuito: o Supabase pausa se ficar 7 dias sem nenhum uso. Abrindo o app
 
 ## Versões
 
+- **1.1.1** (24/10/2026) — o botão "Enviar teste" diz se o celular não está cadastrado ou se o envio falhou.
 - **1.1** (24/10/2026) — avisos no celular, "Estou no mercado" + modo mercado, código de barras, foto do item, orçamento do mês.
 - **1.0** (23/10/2026) — primeira versão, tema rosa (pedido da esposa; destaque #d63a72, no escuro #e8558a) e ícone rosa.
