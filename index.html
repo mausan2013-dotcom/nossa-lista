@@ -312,7 +312,7 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.3';
+  const VERSAO = '1.3.1';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
@@ -1139,11 +1139,22 @@
       <div id="fn-opcoes"></div>
       <div class="botoes"><button class="btn" data-f="nao">Cancelar</button><button class="btn primario" data-f="salvar">${c ? 'Preencher a compra' : 'Guardar a compra'}</button></div>`, (f) => {
       const casados = () => linhas.filter((l) => candidatos().some((i) => norm(i.nome) === norm(l.nome))).length;
+      // itens da compra que nenhuma linha da nota preenche (marcados no mercado, mas não comprados)
+      const sobras = () => {
+        if (!c) return [];
+        const feitos = new Set();
+        for (const l of linhas) { const k = c.itens.findIndex((i, j) => !feitos.has(j) && norm(i.nome) === norm(l.nome)); if (k >= 0) feitos.add(k); }
+        return c.itens.filter((i, j) => !feitos.has(j));
+      };
+      const marcas = { incluir: true, tirar: true, sobras: true };
+      f.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.marca; if (k) marcas[k] = e.target.checked; });
+      const opcao = (k, texto) => `<label class="nf-opcao"><input type="checkbox" id="fn-${k}" data-marca="${k}" ${marcas[k] ? 'checked' : ''}><span>${texto}</span></label>`;
       const opcoes = () => {
-        const n = casados(), novos = linhas.length - n, antes = $('#fn-opcoes input', f), marca = !antes || antes.checked ? 'checked' : '';
+        const n = casados(), novos = linhas.length - n, fora = sobras();
         $('#fn-opcoes', f).innerHTML = c
-          ? (novos ? `<label class="nf-opcao"><input type="checkbox" id="fn-incluir" ${marca}><span>Incluir na compra ${novos === 1 ? 'o item que só está' : `os ${novos} itens que só estão`} na nota</span></label>` : '')
-          : (n ? `<label class="nf-opcao"><input type="checkbox" id="fn-tirar" ${marca}><span>Tirar da lista ${n === 1 ? 'o item que veio' : `os ${n} itens que vieram`} na nota</span></label>` : '');
+          ? (novos ? opcao('incluir', `Incluir na compra ${novos === 1 ? 'o item que só está' : `os ${novos} itens que só estão`} na nota`) : '') +
+            (fora.length ? opcao('sobras', `Tirar da compra ${fora.length === 1 ? 'o item que não veio' : `os ${fora.length} itens que não vieram`} na nota: ${fora.map((i) => esc(i.nome)).join(', ')}`) : '')
+          : (n ? opcao('tirar', `Tirar da lista ${n === 1 ? 'o item que veio' : `os ${n} itens que vieram`} na nota`) : '');
       };
       const detalhe = (l) => {
         const naLista = candidatos().some((i) => norm(i.nome) === norm(l.nome)), v = valorItem(l);
@@ -1178,19 +1189,22 @@
         let compra, tirados = 0;
         if (c) {
           const its = c.itens.map((i) => Object.assign({}, i)), feitos = new Set();
-          const incluir = $('#fn-incluir', f) ? $('#fn-incluir', f).checked : true;
+          const novos = [];
           for (const l of linhas) {
             const k = its.findIndex((i, j) => !feitos.has(j) && norm(i.nome) === norm(l.nome));
             if (k >= 0) { its[k] = Object.assign({}, its[k], { qtd: l.qtd, un: l.un, preco: l.preco }); feitos.add(k); }
-            else if (incluir) its.push(doItem(l));
+            else if (marcas.incluir) novos.push(doItem(l));
           }
-          compra = Object.assign({}, c, extra, { itens: its, total: totalItens(its) - extra.desconto, editada: Date.now(), editadaPor: meuNome() });
+          const ficam = marcas.sobras ? its.filter((i, j) => feitos.has(j)) : its;
+          tirados = its.length - ficam.length;
+          ficam.push(...novos);
+          compra = Object.assign({}, c, extra, { itens: ficam, total: totalItens(ficam) - extra.desconto, editada: Date.now(), editadaPor: meuNome() });
         } else {
           const lista = D().listas[listaId] || { nome: 'Mercado', emoji: '🛒' };
           const its = linhas.map(doItem);
           compra = Object.assign({ id: uid(), lista: listaId, nomeLista: lista.nome, emoji: lista.emoji, por: meuNome() }, extra, { itens: its, total: totalItens(its) - extra.desconto });
           for (const it of its) lembrarProduto(Object.assign({}, it, { preco: null, lista: listaId }), true);
-          if ($('#fn-tirar', f) && $('#fn-tirar', f).checked) {
+          if ($('#fn-tirar', f) && marcas.tirar) {
             for (const i of itensDa(listaId)) if (its.some((x) => norm(x.nome) === norm(i.nome))) { Store.put('itens', Object.assign({}, i, { apagado: true })); tirados++; }
           }
         }
@@ -1215,7 +1229,7 @@
         }
         fecharFolha();
         if (tela !== 'historico') ir('historico'); else render();
-        toast(c ? `Compra preenchida pela nota · ${moeda(compra.total)}` : `Compra guardada · ${moeda(compra.total)}${tirados ? ` · ${tirados} ${tirados === 1 ? 'item saiu' : 'itens saíram'} da lista` : ''}`);
+        toast(c ? `Compra preenchida pela nota · ${moeda(compra.total)}${tirados ? ` · ${tirados} ${tirados === 1 ? 'item saiu' : 'itens saíram'} da compra` : ''}` : `Compra guardada · ${moeda(compra.total)}${tirados ? ` · ${tirados} ${tirados === 1 ? 'item saiu' : 'itens saíram'} da lista` : ''}`);
       };
     });
   }

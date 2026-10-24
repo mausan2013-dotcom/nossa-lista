@@ -35,7 +35,7 @@ Publicar mudanças: `~/.local/bin/publica-nossa-lista "mensagem"`.
 - **v1.1** — Orçamento do mês por lista: barra na tela inicial, "resta/passa" no rodapé (contando o carrinho) e no histórico
 
 - **v1.2** — Arrastar o item: para a **direita** marca (ou desmarca, se já está no carrinho); para a **esquerda** apaga, com "Desfazer". A rolagem vertical segue normal; começar colado na borda esquerda é o gesto de voltar do iPhone e é ignorado. Uma dica aparece uma vez.
-- **v1.3** — **Nota fiscal (NFC-e de SP e RS):** no Histórico, botão 🧾 → lê o QR Code da nota (ou colar o link). A compra entra com mercado, data/hora, itens, quantidades, preços e desconto. Os nomes da nota ("ERVA MATE SEIVA PURA 1kg") são casados com os itens da lista ("Erva mate", ✓); dá para renomear antes de guardar e o app aprende para a próxima nota. Opção de tirar da lista o que veio na nota. Também dá para **preencher uma compra já finalizada** pela nota (botão no aviso "Compra guardada · Ler a nota" ou na edição da compra). Nota repetida não duplica: abre a compra que já existe. O nome do mercado fica guardado pelo CNPJ (`config` → `mercados`).
+- **v1.3** — **Nota fiscal (NFC-e de SP e RS):** no Histórico, botão 🧾 → lê o QR Code da nota (ou colar o link). A compra entra com mercado, data/hora, itens, quantidades, preços e desconto. Os nomes da nota ("ERVA MATE SEIVA PURA 1kg") são casados com os itens da lista ("Erva mate", ✓); dá para renomear antes de guardar e o app aprende para a próxima nota. Opção de tirar da lista o que veio na nota e, ao preencher uma compra feita, de tirar dela o que não veio na nota (v1.3.1). Também dá para **preencher uma compra já finalizada** pela nota (botão no aviso "Compra guardada · Ler a nota" ou na edição da compra). Nota repetida não duplica: abre a compra que já existe. O nome do mercado fica guardado pelo CNPJ (`config` → `mercados`).
 - **v1.2** — Editar compra feita (Histórico → toque na compra): preencher/corrigir preço e quantidade de cada item (total ao vivo), tirar ou incluir item, mudar a data. O histórico mostra "N sem preço" nas compras com preço faltando. O preço salvo atualiza o catálogo (itens novos já vêm com ele), a não ser que exista compra mais recente do produto.
 
 ## Como a sincronização funciona
@@ -78,6 +78,7 @@ Projeto gratuito: o Supabase pausa se ficar 7 dias sem nenhum uso. Abrindo o app
 ## Versões
 
 - **1.3** (24/10/2026) — ler a nota fiscal (NFC-e) pelo QR Code: nova compra ou preencher uma compra feita. Testado com nota real do RS (Zaffari, 23 itens, R$ 421,55): função com Deno contra a página real; app com dois celulares, nuvem simulada e câmera falsa mostrando o QR. SP ainda sem teste com nota real.
+- **1.3.1** (24/10/2026) — ao preencher uma compra pela nota, opção (marcada) de tirar da compra os itens que não vieram na nota (marcados no mercado, mas não comprados), com os nomes na tela; assim o total e as quantidades ficam iguais aos da nota.
 
 - **1.2.2** (24/10/2026) — ícone do atalho embutido na página (o iPhone do Mauricio ficou com a letra N: não conseguiu baixar o arquivo do ícone ao salvar).
 - **1.2.1** (24/10/2026) — X no canto de todas as telas que abrem de baixo (fixo ao rolar); na edição da compra, tirar item agora é uma lixeira para não confundir com o X de fechar.
