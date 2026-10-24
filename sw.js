@@ -1,6 +1,6 @@
 // Nossa Lista — service worker: deixa o app abrir sem internet (mercado sem sinal).
 // Estratégia: rede primeiro (pega a versão nova quando há internet), cache como reserva.
-const CACHE = 'nossalista-20261024170139';
+const CACHE = 'nossalista-20261024202107';
 const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

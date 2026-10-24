@@ -284,6 +284,20 @@
     .cp-total small { color: var(--muted); font-size: 13px; }
     .adicionar .btn.lerc { padding: 0 12px; background: var(--surface); box-shadow: var(--shadow); color: var(--text); }
     .adicionar .btn.lerc svg { width: 24px; height: 24px; }
+    /* v1.3: nota fiscal */
+    .leitor.qr .mira { top: 50%; left: 50%; right: auto; width: 62%; height: auto; aspect-ratio: 1; transform: translate(-50%, -50%); }
+    .nf-sub { color: var(--muted); margin: -6px 0 12px; font-size: 14.5px; }
+    .nf-sub b { color: var(--text); }
+    .nf-linha { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .nf-linha:last-child { border-bottom: 0; }
+    .nf-topo { display: flex; gap: 8px; align-items: center; }
+    .nf-topo input { flex: 1; min-width: 0; padding: 9px 10px; font-weight: 600; }
+    .nf-det { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); margin-top: 5px; padding: 0 2px; }
+    .nf-det .nf-orig { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nf-det b { color: var(--text); font-size: 14px; white-space: nowrap; }
+    .nf-ok { color: var(--accent-strong); font-weight: 600; }
+    .nf-opcao { display: flex; gap: 10px; align-items: flex-start; padding: 12px 2px 0; font-size: 15px; }
+    .nf-opcao input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -298,7 +312,7 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.2.2';
+  const VERSAO = '1.3';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
@@ -341,6 +355,7 @@
   const nomeMes = (ms) => { const t = new Date(ms).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); return t[0].toUpperCase() + t.slice(1); };
 
   const ICONE = {
+    nota: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
     voltar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
     mais: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     menu: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
@@ -519,7 +534,7 @@
       `${lista.emoji || ''} ${lista.nome} · ${marcados.length} ${marcados.length === 1 ? 'item' : 'itens'}`, listaId);
     if (euNoMercado()) sairMercado(true);
     render();
-    toast(`Compra guardada no histórico · ${moeda(total)}`);
+    toast(`Compra guardada · ${moeda(total)}`, 'Ler a nota', () => lerNota(compra.id));
   }
 
   function repetirCompra(compraId, listaId, itensBase) {
@@ -937,12 +952,14 @@
     }));
   }
   // Tela cheia por cima de tudo (não fecha a folha de edição que estiver aberta)
-  async function lerCodigo(aoLer) {
+  // modo 'nota': lê o QR Code da nota fiscal (e aceita colar o link)
+  async function lerCodigo(aoLer, modo) {
+    const nota = modo === 'nota';
     const camada = document.createElement('div');
     camada.className = 'leitor-tela';
-    camada.innerHTML = `<h2>Ler código de barras</h2><div class="leitor"><video playsinline muted autoplay></video><div class="mira"></div></div>
-      <p id="leitor-msg" style="text-align:center;color:var(--muted)">Aponte para o código de barras da embalagem</p>
-      <form><input id="leitor-num" inputmode="numeric" placeholder="ou digite o número"><button class="btn primario">OK</button></form>
+    camada.innerHTML = `<h2>${nota ? 'Ler nota fiscal' : 'Ler código de barras'}</h2><div class="leitor${nota ? ' qr' : ''}"><video playsinline muted autoplay></video><div class="mira"></div></div>
+      <p id="leitor-msg" style="text-align:center;color:var(--muted)">${nota ? 'Aponte para o QR Code no fim da nota' : 'Aponte para o código de barras da embalagem'}</p>
+      <form><input id="leitor-num" ${nota ? 'inputmode="url" placeholder="ou cole o link da nota"' : 'inputmode="numeric" placeholder="ou digite o número"'}><button class="btn primario">OK</button></form>
       <div class="botoes"><button type="button" class="btn largo" data-f="nao">Cancelar</button></div>`;
     document.body.append(camada);
     let leitor = null, acabou = false;
@@ -954,18 +971,18 @@
       if (cod) aoLer(cod);
     };
     $('[data-f=nao]', camada).onclick = () => terminar();
-    $('form', camada).onsubmit = (e) => { e.preventDefault(); const v = $('#leitor-num', camada).value.replace(/\D/g, ''); if (v) terminar(v); };
+    $('form', camada).onsubmit = (e) => { e.preventDefault(); const t = $('#leitor-num', camada).value.trim(), v = nota ? t : t.replace(/\D/g, ''); if (v) terminar(v); };
     try {
       await carregarZXing();
       if (acabou) return;
       const F = ZXing.BarcodeFormat;
-      const dicas = new Map([[ZXing.DecodeHintType.POSSIBLE_FORMATS, [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128]]]);
+      const dicas = new Map([[ZXing.DecodeHintType.POSSIBLE_FORMATS, nota ? [F.QR_CODE] : [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128]]]);
       leitor = new ZXing.BrowserMultiFormatReader(dicas, 250);
       await leitor.decodeFromConstraints({ video: { facingMode: 'environment' } }, $('video', camada), (res) => { if (res) terminar(res.getText()); });
       if (acabou) try { leitor.reset(); } catch (e) {}
     } catch (e) {
       const m = $('#leitor-msg', camada);
-      if (m) m.textContent = /NotAllowed|Permission/i.test((e && e.name) + (e && e.message)) ? 'Sem acesso à câmera. Libere em Ajustes do iPhone › Safari › Câmera, ou digite o número.' : 'Não foi possível abrir a câmera. Digite o número abaixo.';
+      if (m) m.textContent = /NotAllowed|Permission/i.test((e && e.name) + (e && e.message)) ? 'Sem acesso à câmera. Libere em Ajustes do iPhone › Safari › Câmera, ou ' + (nota ? 'cole o link.' : 'digite o número.') : 'Não foi possível abrir a câmera. ' + (nota ? 'Cole o link abaixo.' : 'Digite o número abaixo.');
     }
   }
   const produtoPorCodigo = (cod) => ativos('catalogo').find((c) => (c.codigos || []).includes(cod));
@@ -1012,6 +1029,194 @@
         if (n && !campo.value) campo.value = n;
         campo.focus();
       });
+    });
+  }
+
+  /* ---------- v1.3: nota fiscal (NFC-e) ----------
+     O QR Code da nota leva à página da Secretaria da Fazenda (SP e RS por enquanto). A função nl-nota do Supabase
+     abre essa página (o navegador não pode) e devolve só os dados da compra; o app junta os nomes da nota com os
+     itens da lista e aprende ("ARROZ TP1 CAMIL 5KG" = "Arroz") para as próximas notas. */
+  async function buscarNota(url) {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 30000);
+    let r;
+    try {
+      r = await fetch(`${SUPA_URL}/functions/v1/nl-nota`, {
+        method: 'POST', signal: ctl.signal,
+        headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + await Nuvem.token(), 'Content-Type': 'application/json', 'x-region': 'sa-east-1' },
+        body: JSON.stringify({ url })
+      });
+    } catch (e) { throw new Error(navigator.onLine ? 'Não foi possível buscar a nota. Tente de novo.' : 'Sem internet: leia a nota quando voltar o sinal.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.detalhe || (r.status === 404 ? 'A leitura de notas ainda não foi ativada no Supabase.' : 'Não foi possível ler a nota.'));
+    return d;
+  }
+  function lerNota(compraId) {
+    if (!Nuvem.ativa()) return toast('Para ler a nota, entre na sua conta em Ajustes');
+    lerCodigo(async (texto) => {
+      if (!/^https?:\/\//i.test(texto)) return toast('Este QR Code não é de nota fiscal');
+      toast('Buscando a nota…');
+      let nota;
+      try { nota = await buscarNota(texto); } catch (e) { return toast(e.message); }
+      const repetida = nota.chave && ativos('compras').find((c) => c.nota === nota.chave && c.id !== compraId);
+      if (repetida) { toast('Esta nota já está no histórico'); return abrirCompra(repetida.id); }
+      $('#toast').classList.remove('visivel');
+      abrirNota(nota, compraId);
+    }, 'nota');
+  }
+
+  const FORA = new Set(['de', 'da', 'do', 'das', 'dos', 'com', 'sem', 'e', 'c', 's', 'p', 'tp']);
+  const palavras = (s) => norm(s).replace(/[^a-z0-9 ]/g, ' ').split(' ').filter((t) => t.length >= 2 && !FORA.has(t));
+  // Todas as palavras do nome do app aparecem no nome da nota (inteiras ou abreviadas: "dent" = "dental")? Devolve quantas.
+  // A primeira tem que estar no começo da nota, onde vem o tipo do produto: "Leite" não casa com "CUCA ... DOCE LEIT".
+  function casaNome(nomeNota, nome) {
+    const n = palavras(nomeNota), c = palavras(nome);
+    if (!c.length) return 0;
+    const bate = (p, q) => q.startsWith(p) || (q.length >= 3 && p.startsWith(q));
+    if (!n.slice(0, 2).some((q) => bate(c[0], q))) return 0;
+    for (const p of c) if (!n.some((q) => bate(p, q))) return 0;
+    return c.length;
+  }
+  const nomeDaNota = (s) => { const t = String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); return t ? t[0].toUpperCase() + t.slice(1) : ''; };
+  const unDaNota = (u) => (/^kg/i.test(u) ? 'kg' : /^(l|lt|lts|litros?)$/i.test(u) ? 'L' : 'un');
+  const nomeLoja = (s) => {
+    const t = String(s || '').replace(/"[^"]*"/g, ' ')
+      .replace(/\b(ltda|s\.?\/?a|eireli|epp|me|filial\s*\d*|comercial|comercio|com|de alimentos|alimentos|supermercados?|hipermercados?|atacadistas?|atacado|varejo|distribuidora)\b\.?/gi, ' ')
+      .replace(/\s+/g, ' ').trim() || String(s || '');
+    return t.toLowerCase().replace(/(^|[\s-])\S/g, (m) => m.toUpperCase());
+  };
+  const mercadosSalvos = () => (D().config.mercados || {}).nomes || {};
+
+  // Uma linha por produto da nota, com o nome que vai para o app
+  function montarLinhas(nota, candidatos) {
+    const linhas = [];
+    for (const it of nota.itens) {
+      const un = unDaNota(it.un), preco = it.unit != null ? it.unit : it.valor;
+      const igual = linhas.find((l) => l.nomeNota === it.nome && l.preco === preco && l.un === un);
+      if (igual) { igual.qtd = Math.round((igual.qtd + (it.qtd || 1)) * 1000) / 1000; continue; }
+      linhas.push({ nomeNota: it.nome, qtd: it.qtd || 1, un, preco, nome: '', origem: '' });
+    }
+    // 1º: o que o app aprendeu nas notas anteriores
+    const aprendidos = ativos('catalogo').filter((c) => (c.nomesNota || []).length);
+    for (const l of linhas) {
+      const c = aprendidos.find((x) => x.nomesNota.includes(norm(l.nomeNota)));
+      if (c) { l.nome = c.nome; l.cat = c.cat; l.origem = 'aprendido'; }
+    }
+    // 2º: itens da lista (ou da compra), cada um uma vez, o encaixe mais completo primeiro
+    const pares = [];
+    candidatos.forEach((c, ci) => linhas.forEach((l, li) => {
+      if (l.nome) return;
+      const s = casaNome(l.nomeNota, c.nome);
+      if (s) pares.push([s * 100 + c.nome.length - palavras(l.nomeNota).length, ci, li]);
+    }));
+    pares.sort((a, b) => b[0] - a[0]);
+    const usados = new Set(linhas.filter((l) => l.nome).map((l) => norm(l.nome)));
+    for (const [, ci, li] of pares) {
+      const c = candidatos[ci], l = linhas[li];
+      if (l.nome || usados.has(norm(c.nome))) continue;
+      l.nome = c.nome; l.cat = c.cat; l.origem = 'lista'; usados.add(norm(c.nome));
+    }
+    // 3º: o resto fica com o nome da nota
+    for (const l of linhas) if (!l.nome) l.nome = nomeDaNota(l.nomeNota);
+    return linhas;
+  }
+
+  function abrirNota(nota, compraId) {
+    const c = compraId ? D().compras[compraId] : null;
+    const destinos = listasOrdenadas();
+    let listaId = c ? c.lista : (D().listas.mercado && !D().listas.mercado.apagado ? 'mercado' : (destinos[0] || {}).id);
+    const candidatos = () => (c ? c.itens : listaId ? itensDa(listaId) : []);
+    let linhas = montarLinhas(nota, candidatos());
+    const quando = nota.data ? new Date(nota.data).getTime() : Date.now();
+    const raiz = String(nota.cnpj || '').slice(0, 8);
+    const loja = mercadosSalvos()[raiz] || nomeLoja(nota.mercado);
+    const onde = c ? 'compra' : 'lista';
+    abrirFolha(`<h2>🧾 Nota fiscal</h2>
+      <p class="nf-sub">${new Date(quando).toLocaleDateString('pt-BR')} · ${nota.itens.length} ${nota.itens.length === 1 ? 'item' : 'itens'} · <b>${moeda(nota.pago)}</b>${nota.desconto ? ` · desconto ${moeda(nota.desconto)}` : ''}</p>
+      <div class="campo"><label>Mercado</label><input id="fn-mercado" value="${esc(loja)}" autocapitalize="words"></div>
+      ${c ? '' : `<div class="campo"><label>Lista</label><select id="fn-lista">${destinos.map((l) => `<option value="${esc(l.id)}" ${l.id === listaId ? 'selected' : ''}>${esc(l.emoji || '')} ${esc(l.nome)}</option>`).join('')}</select></div>`}
+      <p class="nf-sub" style="margin:4px 0 2px">Confira os nomes. Os que já estavam na ${onde} aparecem com ✓. Mudou um nome? O app aprende para a próxima nota.</p>
+      <div id="fn-itens"></div>
+      <div id="fn-opcoes"></div>
+      <div class="botoes"><button class="btn" data-f="nao">Cancelar</button><button class="btn primario" data-f="salvar">${c ? 'Preencher a compra' : 'Guardar a compra'}</button></div>`, (f) => {
+      const casados = () => linhas.filter((l) => candidatos().some((i) => norm(i.nome) === norm(l.nome))).length;
+      const opcoes = () => {
+        const n = casados(), novos = linhas.length - n, antes = $('#fn-opcoes input', f), marca = !antes || antes.checked ? 'checked' : '';
+        $('#fn-opcoes', f).innerHTML = c
+          ? (novos ? `<label class="nf-opcao"><input type="checkbox" id="fn-incluir" ${marca}><span>Incluir na compra ${novos === 1 ? 'o item que só está' : `os ${novos} itens que só estão`} na nota</span></label>` : '')
+          : (n ? `<label class="nf-opcao"><input type="checkbox" id="fn-tirar" ${marca}><span>Tirar da lista ${n === 1 ? 'o item que veio' : `os ${n} itens que vieram`} na nota</span></label>` : '');
+      };
+      const detalhe = (l) => {
+        const naLista = candidatos().some((i) => norm(i.nome) === norm(l.nome)), v = valorItem(l);
+        return `<span class="nf-orig">${naLista ? `<span class="nf-ok">✓ na ${onde}</span> · ` : ''}${esc(l.nomeNota)}</span>
+          <b>${fmtNum(l.qtd)} ${esc(l.un)} × ${moeda(l.preco)}${v != null && (l.qtd !== 1 || l.un !== 'un') ? ' = ' + moeda(v) : ''}</b>`;
+      };
+      const desenhar = () => {
+        $('#fn-itens', f).innerHTML = linhas.map((l, k) => `<div class="nf-linha"><div class="nf-topo"><input data-nome="${k}" value="${esc(l.nome)}" autocapitalize="sentences" aria-label="Nome do item">
+            <button type="button" class="cp-x" data-rm="${k}" aria-label="Deixar de fora">${ICONE.lixo}</button></div>
+            <div class="nf-det" data-det="${k}">${detalhe(l)}</div></div>`).join('');
+        opcoes();
+      };
+      desenhar();
+      // ao digitar, só a linha de baixo muda (o campo continua com o foco)
+      f.addEventListener('input', (e) => {
+        const k = e.target.dataset && e.target.dataset.nome;
+        if (k == null) return;
+        linhas[+k].nome = e.target.value;
+        $(`[data-det="${k}"]`, f).innerHTML = detalhe(linhas[+k]);
+        opcoes();
+      });
+      f.addEventListener('click', (e) => { const b = e.target.closest('[data-rm]'); if (b) { linhas.splice(+b.dataset.rm, 1); desenhar(); } });
+      const sel = $('#fn-lista', f);
+      if (sel) sel.onchange = () => { listaId = sel.value; linhas = montarLinhas({ itens: linhas.map((l) => ({ nome: l.nomeNota, qtd: l.qtd, un: l.un === 'kg' ? 'KG' : l.un === 'L' ? 'L' : 'UN', unit: l.preco })) }, candidatos()); desenhar(); };
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      $('[data-f=salvar]', f).onclick = () => {
+        if (!linhas.length) return toast('Nenhum item para guardar');
+        for (const l of linhas) l.nome = capitalizar(l.nome.trim()) || nomeDaNota(l.nomeNota);
+        const mercado = $('#fn-mercado', f).value.trim();
+        const doItem = (l) => ({ nome: l.nome, cat: l.cat && cats().includes(l.cat) ? l.cat : palpiteCategoria(l.nome), qtd: l.qtd, un: l.un, preco: l.preco, obs: '' });
+        const extra = { mercado, cnpj: nota.cnpj || '', nota: nota.chave || '', desconto: nota.desconto || 0, data: quando };
+        let compra, tirados = 0;
+        if (c) {
+          const its = c.itens.map((i) => Object.assign({}, i)), feitos = new Set();
+          const incluir = $('#fn-incluir', f) ? $('#fn-incluir', f).checked : true;
+          for (const l of linhas) {
+            const k = its.findIndex((i, j) => !feitos.has(j) && norm(i.nome) === norm(l.nome));
+            if (k >= 0) { its[k] = Object.assign({}, its[k], { qtd: l.qtd, un: l.un, preco: l.preco }); feitos.add(k); }
+            else if (incluir) its.push(doItem(l));
+          }
+          compra = Object.assign({}, c, extra, { itens: its, total: totalItens(its) - extra.desconto, editada: Date.now(), editadaPor: meuNome() });
+        } else {
+          const lista = D().listas[listaId] || { nome: 'Mercado', emoji: '🛒' };
+          const its = linhas.map(doItem);
+          compra = Object.assign({ id: uid(), lista: listaId, nomeLista: lista.nome, emoji: lista.emoji, por: meuNome() }, extra, { itens: its, total: totalItens(its) - extra.desconto });
+          for (const it of its) lembrarProduto(Object.assign({}, it, { preco: null, lista: listaId }), true);
+          if ($('#fn-tirar', f) && $('#fn-tirar', f).checked) {
+            for (const i of itensDa(listaId)) if (its.some((x) => norm(x.nome) === norm(i.nome))) { Store.put('itens', Object.assign({}, i, { apagado: true })); tirados++; }
+          }
+        }
+        Store.put('compras', compra);
+        precosNoCatalogo(compra.id, compra.itens);
+        // aprende: nome da nota -> produto do app (um nome de nota, um produto); só quando o nome não é o da própria nota
+        for (const l of linhas) {
+          const id = norm(l.nome), nn = norm(l.nomeNota);
+          if (id === nn) continue;
+          for (const x of ativos('catalogo').filter((x) => x.id !== id && (x.nomesNota || []).includes(nn)))
+            Store.put('catalogo', Object.assign({}, x, { nomesNota: x.nomesNota.filter((y) => y !== nn) }));
+          const atual = D().catalogo[id] || { id, nome: l.nome, cat: palpiteCategoria(l.nome), un: l.un, vezes: 0, porLista: {} };
+          Store.put('catalogo', Object.assign({}, atual, { nomesNota: [...new Set([...(atual.nomesNota || []), nn])].slice(-10) }));
+        }
+        if (mercado && raiz && mercadosSalvos()[raiz] !== mercado)
+          Store.put('config', { id: 'mercados', nomes: Object.assign({}, mercadosSalvos(), { [raiz]: mercado }) });
+        Store.concluir();
+        if (!c) {
+          Avisos.enviar('compra', `${meuNome() || 'Alguém'} guardou a nota do ${mercado || 'mercado'} · ${moeda(compra.total)}`,
+            `${compra.emoji || ''} ${compra.nomeLista} · ${compra.itens.length} ${compra.itens.length === 1 ? 'item' : 'itens'}`, listaId);
+          if (euNoMercado()) sairMercado(true);
+        }
+        fecharFolha();
+        if (tela !== 'historico') ir('historico'); else render();
+        toast(c ? `Compra preenchida pela nota · ${moeda(compra.total)}` : `Compra guardada · ${moeda(compra.total)}${tirados ? ` · ${tirados} ${tirados === 1 ? 'item saiu' : 'itens saíram'} da lista` : ''}`);
+      };
     });
   }
 
@@ -1184,7 +1389,7 @@
   function telaHistorico() {
     const compras = ativos('compras').sort((a, b) => b.data - a.data);
     let html = '';
-    if (!compras.length) html = `<div class="vazio"><div class="grande">🧾</div>Nenhuma compra ainda.<br>Ao tocar em <b>Finalizar compra</b> numa lista, ela aparece aqui.</div>`;
+    if (!compras.length) html = `<div class="vazio"><div class="grande">🧾</div>Nenhuma compra ainda.<br>Ao tocar em <b>Finalizar compra</b> numa lista, ela aparece aqui.<br><br>Também dá para ler a nota fiscal do mercado: toque no 🧾 lá em cima.</div>`;
     const porMes = {};
     for (const c of compras) { const k = nomeMes(c.data); (porMes[k] = porMes[k] || []).push(c); }
     for (const [mes, lista] of Object.entries(porMes)) {
@@ -1195,10 +1400,10 @@
         <div class="mes"><span>${lista.length} ${lista.length === 1 ? 'compra' : 'compras'}</span><b>${moeda(tot)}</b></div>
         ${orcs ? `<div class="orc-hist">${orcs}</div>` : ''}
         ${lista.map((c) => `<button class="compra" data-compra="${esc(c.id)}"><span style="font-size:24px">${esc(c.emoji || '🛒')}</span>
-          <span class="info"><div>${esc(c.nomeLista)} · ${dataCurta(c.data)}</div><div class="det">${c.itens.length} ${c.itens.length === 1 ? 'item' : 'itens'}${c.por ? ' · ' + esc(c.por) : ''}${c.itens.some((i) => i.preco == null) ? ` · <span style="color:var(--accent-strong);font-weight:600">${c.itens.filter((i) => i.preco == null).length} sem preço</span>` : ''}</div></span>
+          <span class="info"><div>${esc(c.nomeLista)} · ${dataCurta(c.data)}${c.nota ? ' 🧾' : ''}</div><div class="det">${c.itens.length} ${c.itens.length === 1 ? 'item' : 'itens'}${c.mercado ? ' · ' + esc(c.mercado) : ''}${c.por ? ' · ' + esc(c.por) : ''}${c.itens.some((i) => i.preco == null) ? ` · <span style="color:var(--accent-strong);font-weight:600">${c.itens.filter((i) => i.preco == null).length} sem preço</span>` : ''}</div></span>
           <span class="total">${moeda(c.total)}</span></button>`).join('')}</div>`;
     }
-    return cabecalho('Histórico') + `<main>${html}</main>` + abas();
+    return cabecalho('Histórico', { direita: `<button class="btn-icone" data-acao="ler-nota" aria-label="Ler nota fiscal">${ICONE.nota}</button>` }) + `<main>${html}</main>` + abas();
   }
 
   /* tela: ajustes */
@@ -1463,7 +1668,8 @@
     const porUn = (un) => (un === 'g' ? 'kg' : un === 'ml' ? 'L' : un || 'un');
     const valorTxt = (i) => { const v = valorItem(i); return v != null ? moeda(v) : '—'; };
     abrirFolha(`<h2>${esc(c.emoji || '')} ${esc(c.nomeLista)} · ${new Date(c.data).toLocaleDateString('pt-BR')}</h2>
-      <p style="color:var(--muted);margin:-6px 0 10px;font-size:14.5px">Preencha ou corrija os preços (o preço é por unidade, kg ou litro, como na etiqueta).</p>
+      <p style="color:var(--muted);margin:-6px 0 10px;font-size:14.5px">${c.mercado ? esc(c.mercado) + ' · ' : ''}Preencha ou corrija os preços (o preço é por unidade, kg ou litro, como na etiqueta).</p>
+      ${c.nota ? '' : `<button type="button" class="btn largo" data-f="nota" style="margin-bottom:12px">${ICONE.nota.replace('<svg', '<svg width="20" height="20"')} Preencher pela nota fiscal</button>`}
       <div class="campo"><label>Data da compra</label><input type="date" id="fc-data" value="${dataIso(c.data)}"></div>
       <div id="fc-itens"></div>
       <div class="cp-total" id="fc-total"></div>
@@ -1474,7 +1680,7 @@
       <div class="botoes"><button class="btn perigo" data-f="apagar">Excluir esta compra</button></div>`, (f) => {
       const totais = () => {
         const sem = itens.filter((i) => i.preco == null).length;
-        $('#fc-total', f).innerHTML = `<span>Total${sem ? ` <small>· ${sem} sem preço</small>` : ''}</span><b>${moeda(totalItens(itens))}</b>`;
+        $('#fc-total', f).innerHTML = `<span>Total${c.desconto ? ` <small>· desconto ${moeda(c.desconto)}</small>` : ''}${sem ? ` <small>· ${sem} sem preço</small>` : ''}</span><b>${moeda(totalItens(itens) - (c.desconto || 0))}</b>`;
       };
       const desenhar = () => {
         $('#fc-itens', f).innerHTML = itens.map((i, k) => `<div class="cp-linha"><div class="cp-topo"><span class="cp-nome">${esc(i.nome)}</span>
@@ -1509,7 +1715,7 @@
       };
       $('[data-f=salvar]', f).onclick = () => {
         if (!itens.length) return toast('A compra precisa ter ao menos um item. Para tirar tudo, use Excluir.');
-        const total = totalItens(itens);
+        const total = totalItens(itens) - (c.desconto || 0);
         let data = c.data;
         const novaData = $('#fc-data', f).value;
         if (novaData && novaData !== dataIso(c.data)) {  // muda o dia e mantém a hora
@@ -1522,6 +1728,8 @@
         toast(`Compra atualizada · ${moeda(total)}`);
       };
       $('[data-f=apagar]', f).onclick = () => confirmar('Excluir do histórico?', 'Esta compra some do histórico nos dois celulares.', 'Excluir', () => { Store.put('compras', Object.assign({}, c, { apagado: true })); Store.concluir(); render(); });
+      const bn = $('[data-f=nota]', f);
+      if (bn) bn.onclick = () => { fecharFolha(true); lerNota(id); };
       const r = $('[data-f=repetir]', f);
       if (r) r.onclick = () => { const lid = $('#fc-lista', f).value; const n = repetirCompra(id, lid, itens); fecharFolha(); toast(n ? `${n} ${n === 1 ? 'item adicionado' : 'itens adicionados'}` : 'Todos já estavam na lista'); ir('lista', lid); };
     });
@@ -1660,6 +1868,7 @@
       case 'ir-mercado': return abrirIrMercado();
       case 'sair-mercado': return sairMercado();
       case 'ler-codigo': return lerCodigo(codigoLido);
+      case 'ler-nota': return lerNota();
       case 'ativar-avisos':
         t.disabled = true;
         Avisos.ativar().then(() => { toast('Avisos ligados'); atualizarAvisosUI(); })

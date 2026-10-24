@@ -15,6 +15,9 @@ Publicar mudanças: `~/.local/bin/publica-nossa-lista "mensagem"`.
 - `supabase/02-liberar-logins.sql` — libera os logins criados (rodar de novo se criar/recriar usuário)
 - `supabase/03-avisos-e-fotos.sql` — tabela dos celulares que recebem avisos + pasta das fotos (v1.1)
 - `supabase/functions/nl-avisar/index.ts` — função que envia os avisos (v1.1)
+- `supabase/functions/nl-nota/index.ts` — função que lê a nota fiscal pelo link do QR Code (v1.3)
+- `divulgacao/` — PDF de convite para teste com amigos (e os arquivos para refazê-lo)
+- `PLANO-VERSAO-COMERCIAL.md` — plano técnico para vender o app (várias famílias, cobrança)
 - `supabase/SEGREDOS-nao-compartilhar.txt` — chaves dos avisos (NÃO publicar)
 
 ## Funções
@@ -32,6 +35,7 @@ Publicar mudanças: `~/.local/bin/publica-nossa-lista "mensagem"`.
 - **v1.1** — Orçamento do mês por lista: barra na tela inicial, "resta/passa" no rodapé (contando o carrinho) e no histórico
 
 - **v1.2** — Arrastar o item: para a **direita** marca (ou desmarca, se já está no carrinho); para a **esquerda** apaga, com "Desfazer". A rolagem vertical segue normal; começar colado na borda esquerda é o gesto de voltar do iPhone e é ignorado. Uma dica aparece uma vez.
+- **v1.3** — **Nota fiscal (NFC-e de SP e RS):** no Histórico, botão 🧾 → lê o QR Code da nota (ou colar o link). A compra entra com mercado, data/hora, itens, quantidades, preços e desconto. Os nomes da nota ("ERVA MATE SEIVA PURA 1kg") são casados com os itens da lista ("Erva mate", ✓); dá para renomear antes de guardar e o app aprende para a próxima nota. Opção de tirar da lista o que veio na nota. Também dá para **preencher uma compra já finalizada** pela nota (botão no aviso "Compra guardada · Ler a nota" ou na edição da compra). Nota repetida não duplica: abre a compra que já existe. O nome do mercado fica guardado pelo CNPJ (`config` → `mercados`).
 - **v1.2** — Editar compra feita (Histórico → toque na compra): preencher/corrigir preço e quantidade de cada item (total ao vivo), tirar ou incluir item, mudar a data. O histórico mostra "N sem preço" nas compras com preço faltando. O preço salvo atualiza o catálogo (itens novos já vêm com ele), a não ser que exista compra mais recente do produto.
 
 ## Como a sincronização funciona
@@ -59,12 +63,21 @@ Publicar mudanças: `~/.local/bin/publica-nossa-lista "mensagem"`.
 
 Projeto gratuito: o Supabase pausa se ficar 7 dias sem nenhum uso. Abrindo o app toda semana, não pausa; se pausar, é só reativar no painel.
 
+## Configurar a v1.3 (nota fiscal) — feito em 24/10/2026
+
+- Edge Function `nl-nota` (código em `supabase/functions/nl-nota/index.ts`), **Verify JWT desligado**, sem segredos.
+- O app chama com `x-region: sa-east-1` (roda em São Paulo). A função só abre endereços oficiais (`fazenda.sp.gov.br`, `sefaz.rs.gov.br`, `svrs.rs.gov.br`), confere login e membro, e devolve só os dados da compra: **nunca** CPF, nome ou endereço do consumidor que aparecem na página.
+- Página lida: layout nacional do DANFE NFC-e (classes `txtTit`, `RCod`, `Rqtd`, `RUN`, `RvlUnit`, `valor`, `totalNumb`, `txtTopo`, `chave`). Se um estado mudar a página, é aqui que ajusta.
+- Outro estado: incluir o domínio da Secretaria em `HOSTS` e reimplantar.
+
 ## Testes
 
 - 23/10/2026 (v1.0): Playwright, perfil iPhone 14 Pro, claro e escuro, dois celulares com nuvem simulada.
 - 24/10/2026 (v1.1): dois celulares com nuvem simulada + câmera falsa mostrando um EAN-13: orçamento, aviso de itens agrupado e rápido com o outro no mercado, modo mercado, faixa, leitura de código (novo e conhecido), foto enviada e vista no outro celular, aviso de compra, abrir pelo aviso. Função `nl-avisar` rodada com Deno contra Supabase e "servidor de push" simulados: recusa sem login, respeita preferências, não avisa quem enviou, remove celular inexistente (410), envio criptografado (aes128gcm) e assinado (VAPID). O aviso de verdade no iPhone só dá para testar nos aparelhos.
 
 ## Versões
+
+- **1.3** (24/10/2026) — ler a nota fiscal (NFC-e) pelo QR Code: nova compra ou preencher uma compra feita. Testado com nota real do RS (Zaffari, 23 itens, R$ 421,55): função com Deno contra a página real; app com dois celulares, nuvem simulada e câmera falsa mostrando o QR. SP ainda sem teste com nota real.
 
 - **1.2.2** (24/10/2026) — ícone do atalho embutido na página (o iPhone do Mauricio ficou com a letra N: não conseguiu baixar o arquivo do ícone ao salvar).
 - **1.2.1** (24/10/2026) — X no canto de todas as telas que abrem de baixo (fixo ao rolar); na edição da compra, tirar item agora é uma lixeira para não confundir com o X de fechar.
