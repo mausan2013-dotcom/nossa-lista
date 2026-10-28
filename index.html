@@ -296,6 +296,9 @@
     .nf-det .nf-orig { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .nf-det b { color: var(--text); font-size: 14px; white-space: nowrap; }
     .nf-ok { color: var(--accent-strong); font-weight: 600; }
+    .nf-passos { margin: 0 0 14px; padding-left: 22px; font-size: 15px; line-height: 1.45; }
+    .nf-passos li { margin-bottom: 4px; }
+    a.btn { display: flex; color: var(--text); text-decoration: none; }
     .nf-opcao { display: flex; gap: 10px; align-items: flex-start; padding: 12px 2px 0; font-size: 15px; }
     .nf-opcao input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--accent); }
   </style>
@@ -312,7 +315,7 @@
      Cada registro tem "atualizado" (hora da última mudança); na nuvem vale o mais recente.
      Nada é apagado de verdade: o registro fica com apagado=true, para o outro celular saber.
      ===================================================================== */
-  const VERSAO = '1.3.1';
+  const VERSAO = '1.3.2';
 
   // Nuvem: preencher depois de criar o projeto Supabase (ver LEIA-ME). Vazio = só neste aparelho.
   const SUPA_URL = 'https://ddhhfmucyiehpybkzblc.supabase.co';
@@ -430,7 +433,8 @@
   function valorItem(i) {
     if (i.preco == null) return null;
     const q = i.qtd == null ? 1 : i.qtd;
-    return i.un === 'g' || i.un === 'ml' ? (q / 1000) * i.preco : q * i.preco;
+    // em centavos, como no caixa (2,25 kg × 2,99 = 6,73)
+    return Math.round((i.un === 'g' || i.un === 'ml' ? (q / 1000) * i.preco : q * i.preco) * 100) / 100;
   }
   function detalheItem(i, comPor) {
     const partes = [];
@@ -1050,18 +1054,70 @@
     if (!r.ok) throw new Error(d.detalhe || (r.status === 404 ? 'A leitura de notas ainda não foi ativada no Supabase.' : 'Não foi possível ler a nota.'));
     return d;
   }
+  // SP: o site da Secretaria recusa leitura automática; a nota é aberta no Safari e o texto dela é colado no app
+  const notaDeSP = (link) => { try { return /(^|\.)fazenda\.sp\.gov\.br$/i.test(new URL(link).hostname); } catch (e) { return false; } };
   function lerNota(compraId) {
-    if (!Nuvem.ativa()) return toast('Para ler a nota, entre na sua conta em Ajustes');
     lerCodigo(async (texto) => {
+      if (lerTextoNota(texto).itens.length) return seguirNota(lerTextoNota(texto), compraId);
       if (!/^https?:\/\//i.test(texto)) return toast('Este QR Code não é de nota fiscal');
+      if (notaDeSP(texto)) return colarNota(texto, compraId);
+      if (!Nuvem.ativa()) return toast('Para ler a nota, entre na sua conta em Ajustes');
       toast('Buscando a nota…');
       let nota;
-      try { nota = await buscarNota(texto); } catch (e) { return toast(e.message); }
-      const repetida = nota.chave && ativos('compras').find((c) => c.nota === nota.chave && c.id !== compraId);
-      if (repetida) { toast('Esta nota já está no histórico'); return abrirCompra(repetida.id); }
-      $('#toast').classList.remove('visivel');
-      abrirNota(nota, compraId);
+      try { nota = await buscarNota(texto); } catch (e) { return toast(e.message, 'Colar o texto', () => colarNota(texto, compraId)); }
+      seguirNota(nota, compraId);
     }, 'nota');
+  }
+  function seguirNota(nota, compraId) {
+    const repetida = nota.chave && ativos('compras').find((c) => c.nota === nota.chave && c.id !== compraId);
+    if (repetida) { toast('Esta nota já está no histórico'); return abrirCompra(repetida.id); }
+    $('#toast').classList.remove('visivel');
+    abrirNota(nota, compraId);
+  }
+  function colarNota(link, compraId) {
+    const sp = notaDeSP(link);
+    abrirFolha(`<h2>🧾 Copiar a nota</h2>
+      <p class="nf-sub">${sp ? 'O site da nota de SP não deixa o app ler sozinho.' : 'O app não conseguiu ler a nota sozinho.'} Copie o texto dela:</p>
+      <ol class="nf-passos"><li>Toque em <b>Abrir a nota</b>.</li><li>Na página, toque e segure no texto e escolha <b>Selecionar Tudo</b> (ou arraste a seleção do nome do mercado até a chave de acesso) e <b>Copiar</b>.</li><li>Volte aqui e toque em <b>Colar</b>.</li></ol>
+      <a class="btn largo" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Abrir a nota</a>
+      <textarea id="fn-texto" rows="4" placeholder="ou cole aqui o texto da nota" style="margin-top:12px;width:100%"></textarea>
+      <div class="botoes"><button class="btn" data-f="nao">Cancelar</button><button class="btn primario" data-f="colar">Colar</button></div>`, (f) => {
+      const campo = $('#fn-texto', f), botao = $('[data-f=colar]', f);
+      const ler = (txt) => {
+        const nota = lerTextoNota(txt);
+        if (!nota.itens.length) return toast('Não achei os itens no texto copiado. Copie a página inteira da nota.');
+        fecharFolha(true);
+        seguirNota(nota, compraId);
+      };
+      campo.addEventListener('input', () => { botao.textContent = campo.value.trim() ? 'Ler' : 'Colar'; });
+      $('[data-f=nao]', f).onclick = () => fecharFolha();
+      botao.onclick = async () => {
+        if (campo.value.trim()) return ler(campo.value);
+        try { const t = await navigator.clipboard.readText(); if (t) { campo.value = t; return ler(t); } } catch (e) {}
+        campo.focus(); toast('Toque no campo e escolha Colar');
+      };
+    });
+  }
+  // Lê o texto copiado da página da nota (o mesmo modelo nacional em SP e no RS). Do consumidor, nada é guardado.
+  function lerTextoNota(texto) {
+    const t = String(texto || '').replace(/\r/g, '').replace(/[ \t\u00a0]+/g, ' ');
+    const n = (v) => (v == null ? null : Number(v.replace(/\./g, '').replace(',', '.')));
+    const valor = (re) => { const m = t.match(re); return m ? n(m[1]) : null; };
+    const itens = [];
+    for (const m of t.matchAll(/([^\n]+?) ?\( ?C[óo]digo: ?([^)\n]*?) ?\) ?\n? ?Qtde\.: ?([\d.,]+) ?UN: ?([A-Za-z]+)\d* ?Vl\. ?Unit\.: ?([\d.,]+) ?\n? ?Vl\. ?Total ?\n? ?([\d.,]+)/gi))
+      itens.push({ nome: m[1].trim(), codigo: m[2], qtd: n(m[3]), un: m[4], unit: n(m[5]), valor: n(m[6]) });
+    const linhas = t.split('\n').map((l) => l.trim()).filter(Boolean);
+    const k = linhas.findIndex((l) => /^CNPJ:/i.test(l));
+    const d = t.match(/Emiss[ãa]o: ?(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?/i);
+    const ch = t.match(/Chave de acesso:? ?\n? ?((?:\d ?){44})/i);
+    const desconto = valor(/Descontos? R\$:? ?([\d.,]+)/i) || 0, total = valor(/Valor total R\$:? ?([\d.,]+)/i);
+    return {
+      mercado: k > 0 && !/^DOCUMENTO AUXILIAR/i.test(linhas[k - 1]) ? linhas[k - 1] : '',
+      cnpj: ((t.match(/CNPJ: ?([\d./-]+)/i) || [])[1] || '').replace(/\D/g, ''),
+      data: d ? `${d[3]}-${d[2]}-${d[1]}T${d[4]}:${d[5]}:${d[6] || '00'}-03:00` : null,
+      chave: ch ? ch[1].replace(/\D/g, '') : '',
+      total, desconto, pago: valor(/Valor a pagar R\$:? ?([\d.,]+)/i) ?? (total != null ? total - desconto : null), itens
+    };
   }
 
   const FORA = new Set(['de', 'da', 'do', 'das', 'dos', 'com', 'sem', 'e', 'c', 's', 'p', 'tp']);
@@ -1198,11 +1254,11 @@
           const ficam = marcas.sobras ? its.filter((i, j) => feitos.has(j)) : its;
           tirados = its.length - ficam.length;
           ficam.push(...novos);
-          compra = Object.assign({}, c, extra, { itens: ficam, total: totalItens(ficam) - extra.desconto, editada: Date.now(), editadaPor: meuNome() });
+          compra = Object.assign({}, c, extra, { itens: ficam, total: Math.round((totalItens(ficam) - extra.desconto) * 100) / 100, editada: Date.now(), editadaPor: meuNome() });
         } else {
           const lista = D().listas[listaId] || { nome: 'Mercado', emoji: '🛒' };
           const its = linhas.map(doItem);
-          compra = Object.assign({ id: uid(), lista: listaId, nomeLista: lista.nome, emoji: lista.emoji, por: meuNome() }, extra, { itens: its, total: totalItens(its) - extra.desconto });
+          compra = Object.assign({ id: uid(), lista: listaId, nomeLista: lista.nome, emoji: lista.emoji, por: meuNome() }, extra, { itens: its, total: Math.round((totalItens(its) - extra.desconto) * 100) / 100 });
           for (const it of its) lembrarProduto(Object.assign({}, it, { preco: null, lista: listaId }), true);
           if ($('#fn-tirar', f) && marcas.tirar) {
             for (const i of itensDa(listaId)) if (its.some((x) => norm(x.nome) === norm(i.nome))) { Store.put('itens', Object.assign({}, i, { apagado: true })); tirados++; }
@@ -1662,7 +1718,7 @@
   // Tudo é feito numa cópia e só vale ao tocar em "Salvar alterações".
   const precoTxt = (n) => (n == null ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 3 }));
   const dataIso = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-  const totalItens = (its) => its.reduce((s, i) => s + (valorItem(i) || 0), 0);
+  const totalItens = (its) => Math.round(its.reduce((s, i) => s + (valorItem(i) || 0), 0) * 100) / 100;
   // o preço do catálogo (usado nos itens novos) acompanha a compra mais recente do produto
   function precosNoCatalogo(compraId, itens) {
     const c = D().compras[compraId];
@@ -1694,7 +1750,7 @@
       <div class="botoes"><button class="btn perigo" data-f="apagar">Excluir esta compra</button></div>`, (f) => {
       const totais = () => {
         const sem = itens.filter((i) => i.preco == null).length;
-        $('#fc-total', f).innerHTML = `<span>Total${c.desconto ? ` <small>· desconto ${moeda(c.desconto)}</small>` : ''}${sem ? ` <small>· ${sem} sem preço</small>` : ''}</span><b>${moeda(totalItens(itens) - (c.desconto || 0))}</b>`;
+        $('#fc-total', f).innerHTML = `<span>Total${c.desconto ? ` <small>· desconto ${moeda(c.desconto)}</small>` : ''}${sem ? ` <small>· ${sem} sem preço</small>` : ''}</span><b>${moeda(Math.round((totalItens(itens) - (c.desconto || 0)) * 100) / 100)}</b>`;
       };
       const desenhar = () => {
         $('#fc-itens', f).innerHTML = itens.map((i, k) => `<div class="cp-linha"><div class="cp-topo"><span class="cp-nome">${esc(i.nome)}</span>
@@ -1729,7 +1785,7 @@
       };
       $('[data-f=salvar]', f).onclick = () => {
         if (!itens.length) return toast('A compra precisa ter ao menos um item. Para tirar tudo, use Excluir.');
-        const total = totalItens(itens) - (c.desconto || 0);
+        const total = Math.round((totalItens(itens) - (c.desconto || 0)) * 100) / 100;
         let data = c.data;
         const novaData = $('#fc-data', f).value;
         if (novaData && novaData !== dataIso(c.data)) {  // muda o dia e mantém a hora

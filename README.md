@@ -79,6 +79,7 @@ Projeto gratuito: o Supabase pausa se ficar 7 dias sem nenhum uso. Abrindo o app
 
 - **1.3** (24/10/2026) — ler a nota fiscal (NFC-e) pelo QR Code: nova compra ou preencher uma compra feita. Testado com nota real do RS (Zaffari, 23 itens, R$ 421,55): função com Deno contra a página real; app com dois celulares, nuvem simulada e câmera falsa mostrando o QR. SP ainda sem teste com nota real.
 - **1.3.1** (24/10/2026) — ao preencher uma compra pela nota, opção (marcada) de tirar da compra os itens que não vieram na nota (marcados no mercado, mas não comprados), com os nomes na tela; assim o total e as quantidades ficam iguais aos da nota.
+- **1.3.2** (28/10/2026) — notas de SP: o site da Secretaria de SP recusa leitura automática (firewall devolve "Request Rejected" para a função, mesmo saindo do Brasil). Para SP o app não chama a função: abre a folha "Copiar a nota" (botão Abrir a nota → Selecionar Tudo → Copiar → Colar no app) e lê o texto copiado (`lerTextoNota`, mesmo modelo nacional; testado com nota real de SP, 4 itens, R$ 42,52, e com a do RS). Se a função falhar em outra nota, o aviso oferece "Colar o texto". Valores de item e totais arredondados para centavos, como no caixa.
 
 - **1.2.2** (24/10/2026) — ícone do atalho embutido na página (o iPhone do Mauricio ficou com a letra N: não conseguiu baixar o arquivo do ícone ao salvar).
 - **1.2.1** (24/10/2026) — X no canto de todas as telas que abrem de baixo (fixo ao rolar); na edição da compra, tirar item agora é uma lixeira para não confundir com o X de fechar.
